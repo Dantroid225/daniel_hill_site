@@ -1,0 +1,28 @@
+Daniel H. Hill
+Software Application Engineer
+518-428-0803 ▪ danhill225@gmail.com ▪ LinkedIn Profile 
+Multitalented Application Engineer with in-depth technical expertise and 8 years of experience in roles requiring creative problem-solving skills. Proven at optimizing processes, application development approaches, and technical support capabilities to drive operational excellence. Adept team leader who absorbs and implements new concepts quickly. 
+Core Expertise: Software as a Service (SaaS) ▪ System Administration ▪ Computer Programming ▪ Team Leadership ▪ Customer Success ▪ Database Programming ▪ Process Improvement ▪ Staff Training ▪ Technical Support ▪ System Monitoring 
+Professional Experience
+HIGHER LOGIC	8/2019 – 4/2025
+Lead Application Engineering Developer (11/2022 – 4/2025)
+Drove application engineering growth by leading/mentoring a dynamic team and championing implementation and integration improvement initiatives. Evolved support capabilities by leading comprehensive digital transformation efforts. 
+▹	Skilled in maintaining and debugging MVC marketing automation web services, ensuring optimal performance of relational SQL databases and middleware solutions.
+▹	Lead the development and adoption of enhanced processes for documentation, service monitoring, and resolving complex tickets. 
+▹	Designed and implemented scalable solutions for customized API integrations and reports utilizing technologies such as SQL, PowerShell, and .NET
+Senior Application Engineering Developer (4/2022 – 11/2022)
+Continuously improved core support workflows while transforming the engineering organization’s training and onboarding capabilities. Fostered cross-functional collaboration and key process enhancements by developing custom solutions. 
+▹	Accelerated incident detection times and mitigated potential customer impacts by implementing custom dashboards and a tailored DataDog alert system, enhancing the team’s ability to address issues proactively. 
+▹	Improved new engineer ramp-up speed by ~30%, building a structured onboarding program focused on building expertise in the enterprise technology stack and support/development methodologies.
+
+Junior Application Engineer (8/2019 – 10/2020)
+Utilized technical expertise and troubleshooting skills to resolve disruptive application engineering business problems.
+▹	Enabled accurate/efficient response to alerts by developing dashboards and monitoring solutions.
+▹	Led back-end marketing automation of database processes, structure, and code repositories. 
+▹	Orchestrated escalation-level technical troubleshooting for Higher Logic’s marketing automation platforms. 
+Additional Experience as Team Lead Supervisor / Tier 3 Support Technician @ Zones nfrastructure (11/2017 – 7/2019): Coached team leads and support technicians on technical troubleshooting and customer service best practices. As a Support Technician, drove global technical support for an enterprise-class product. 
+Technical Proficiencies
+Tools & Environments: Visual Studio, SSMS, DBeaver, GitHub, MS Copilot, Jira, Bitbucket, Confluence, Postman, SoapUI
+Programming & Scripting: SQL, C#, JavaScript, PowerShell
+Web & Back-end: Node.js, React, .NET
+3D Modeling & Animation: Blender, Adobe (Photoshop, Illustrator, Animate), Unity, EbSynth

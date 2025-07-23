@@ -1,0 +1,27 @@
+Higher Logic – Marketing Automation Senior Application Engineering Developer
+•	Acted as the first line of technical support for customer-reported issues, performing root cause analysis through code review, SQL queries, and system diagnostics.
+•	Triaged and resolved software bugs, escalating complex issues to appropriate development or operations teams when necessary.
+•	Monitored application performance and system resources in both physical and cloud-based environments.
+•	Assisted in identifying and resolving application-level issues to ensure system stability and performance.
+•	Contributed to the development and maintenance of internal software tools and applications.
+•	Wrote clean, efficient, and well-documented code; participated in code reviews and collaborated with developers to implement new features and fix bugs.
+•	Built strong working relationships with Customer Services, Development, DevOps, and Platform teams to ensure seamless issue resolution.
+•	Provided timely feedback and updates through internal communication channels.
+•	Maintained and updated technical documentation related to troubleshooting procedures, known issues, and internal tools.
+•	Developed subject matter expertise in marketing automation product suite and support processes.
+•	Continuously improved technical skills and product knowledge, including learning new tools, technologies, and best practices.
+•	Applied AI tools like GitHub Copilot and prompt engineering techniques to enhance development workflows.
+•	Delivered high-quality support with a strong emphasis on customer satisfaction and responsiveness.
+•	Demonstrated strong analytical and communication skills to understand and address customer needs effectively.
+
+nFrastructure/Zones – Microsoft 365 Business Tier 3 Support Team Lead
+•	Deep knowledge of Microsoft Office 365, Exchange Online, SharePoint Online, Teams, and OneDrive administration and troubleshooting
+•	Responsible for taking escalated tickets from Tier 2 and facilitating interaction with Microsoft Engineering teams Office 365 support engineer Jobs
+•	Experience providing technical support via phone, email, chat, and remote desktop sessions
+•	Excellent customer service skills with ability to communicate effectively with both technical and non-technical clients
+•	Ability to provide detailed technical documentation including troubleshooting procedures and operational guides GlassdoorBoomering
+•	Experience with Office 365 migrations, data migration from legacy systems, and deployment of Microsoft 365 services
+•	Knowledge of implementing security measures, compliance policies, and data loss prevention strategies
+•	Expertise in Skype for Business, Microsoft Teams, and SharePoint environments configuration and maintenance
+•	Experience with user account management, permissions, licensing, and access control
+
