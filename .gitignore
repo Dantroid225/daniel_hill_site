@@ -13,6 +13,9 @@ build/
 06_phase5_styling_integration.md
 07_phase6_configuration_testing.md
 08_phase7_aws_deployment.md
+09_phase8_admin_auth_project_management.md
+backend/ADMIN_SETUP.md
+backend/ENV_SETUP.md
 enhanced_portfolio_prompt.md
 repoA_structure.txt
 repob_backend_structure.txt

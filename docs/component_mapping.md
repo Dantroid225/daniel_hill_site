@@ -1,42 +1,57 @@
 # Component Migration Mapping
 
 ## Navigation Components
-- Navbar -> src/components/navigation/Header.tsx
+
+- Header -> src/components/navigation/Header.tsx
 - Footer -> src/components/navigation/Footer.tsx
 
 ## Layout Components
+
 - Layout -> src/components/layout/Layout.tsx
-- Container -> src/components/layout/Container.tsx
-- Section -> src/components/layout/Section.tsx
 
 ## UI Components
+
 - Button -> src/components/ui/Button.tsx
 - Card -> src/components/ui/Card.tsx
 - Input -> src/components/ui/Input.tsx
 - TextArea -> src/components/ui/TextArea.tsx
 - Loading -> src/components/ui/Loading.tsx
+- ThemeToggle -> src/components/ui/ThemeToggle.tsx
+- AnimatedBackground -> src/components/ui/AnimatedBackground.tsx
 
 ## Page Components
-- Home -> src/pages/home/HomePage.tsx
-- About -> src/pages/about/AboutPage.tsx
-- Projects -> src/pages/projects/ProjectsPage.tsx
-- Contact -> src/pages/contact/ContactPage.tsx
-- Art -> src/pages/art/ArtPage.tsx
-- ProjectDetail -> src/pages/projects/ProjectDetailPage.tsx
-- NotFound -> src/pages/NotFoundPage.tsx
+
+- HomePage -> src/pages/home/HomePage.tsx
+- AboutPage -> src/pages/about/AboutPage.tsx
+- ProjectsPage -> src/pages/projects/ProjectsPage.tsx
+- ContactPage -> src/pages/contact/ContactPage.tsx
+- BlogPage -> src/pages/blog/BlogPage.tsx
+- NotFoundPage -> src/pages/NotFoundPage.tsx
+
+## Admin Components
+
+- AdminPage -> src/pages/admin/AdminPage.tsx
+- AdminDashboardPage -> src/pages/admin/AdminDashboardPage.tsx
+- AdminLoginPage -> src/pages/admin/AdminLoginPage.tsx
+- ProjectManagement -> src/components/admin/ProjectManagement.tsx
 
 ## Form Components
+
 - ContactForm -> src/components/forms/ContactForm.tsx
-- LoginForm -> src/components/forms/LoginForm.tsx
 - ProjectForm -> src/components/forms/ProjectForm.tsx
 
-## Common Components
-- ProjectGrid -> src/components/common/ProjectGrid.tsx
-- ActorGrid -> src/components/common/ActorGrid.tsx
-- AnimationProject -> src/components/common/AnimationProject.tsx
-- SocialLinks -> src/components/common/SocialLinks.tsx
-- TechStack -> src/components/common/TechStack.tsx
+## Auth Components
+
+- ProtectedAdminRoute -> src/components/auth/ProtectedAdminRoute.tsx
+
+## Home Page Components
+
+- Hero -> src/pages/home/components/Hero.tsx
+- About -> src/pages/home/components/About.tsx
+- Projects -> src/pages/home/components/Projects.tsx
+- Contact -> src/pages/home/components/Contact.tsx
 
 ## Context Components
+
 - ThemeContext -> src/context/ThemeContext.tsx
-- ThemeContextDef -> src/context/ThemeContextDef.tsx 
+- AdminAuthContext -> src/context/AdminAuthContext.tsx

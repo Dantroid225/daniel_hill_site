@@ -1,17 +1,77 @@
-const { pool } = require('../config/database');
-const { sendResponse } = require('../utils/responseHelper');
+const { pool } = require("../config/database");
+const { sendResponse } = require("../utils/responseHelper");
+const fs = require("fs");
+const path = require("path");
+
+// Utility function to archive an image file
+const archiveImage = (imageUrl) => {
+  if (!imageUrl || imageUrl === "/uploads/images/default.jpg") {
+    return;
+  }
+
+  const imagePath = path.join(__dirname, "../../", imageUrl);
+  if (!fs.existsSync(imagePath)) {
+    return;
+  }
+
+  try {
+    // Create archived directory if it doesn't exist
+    const archivedDir = path.join(__dirname, "../../uploads/archived");
+    if (!fs.existsSync(archivedDir)) {
+      fs.mkdirSync(archivedDir, { recursive: true });
+    }
+
+    // Generate archived filename with timestamp
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const originalFilename = path.basename(imageUrl);
+    const archivedFilename = `archived-${timestamp}-${originalFilename}`;
+    const archivedPath = path.join(archivedDir, archivedFilename);
+
+    // Move file to archived folder
+    fs.renameSync(imagePath, archivedPath);
+    console.log(`Image moved to archived folder: ${archivedPath}`);
+  } catch (error) {
+    console.error("Error archiving image:", error);
+  }
+};
 
 const portfolioController = {
-  // Get all portfolio items
+  // Get all portfolio items (public)
   getAllPortfolioItems: async (req, res) => {
     try {
       const [rows] = await pool.execute(
-        'SELECT * FROM portfolio_items ORDER BY created_at DESC'
+        'SELECT * FROM portfolio_items WHERE status = "published" ORDER BY display_order ASC, created_at DESC'
       );
-      return sendResponse(res, 200, true, 'Portfolio items retrieved successfully', rows);
+      return sendResponse(
+        res,
+        200,
+        true,
+        "Portfolio items retrieved successfully",
+        rows
+      );
     } catch (error) {
-      console.error('Error fetching portfolio items:', error);
-      return sendResponse(res, 500, false, 'Failed to fetch portfolio items');
+      console.error("Error fetching portfolio items:", error);
+      return sendResponse(res, 500, false, "Failed to fetch portfolio items");
+    }
+  },
+
+  // Get all items (admin version with more details)
+  getAllItems: async (req, res) => {
+    try {
+      const [items] = await pool.execute(
+        "SELECT * FROM portfolio_items ORDER BY display_order ASC, created_at DESC"
+      );
+
+      return sendResponse(
+        res,
+        200,
+        true,
+        "Portfolio items retrieved successfully",
+        items
+      );
+    } catch (error) {
+      console.error("Error fetching portfolio items:", error);
+      return sendResponse(res, 500, false, "Failed to fetch portfolio items");
     }
   },
 
@@ -20,80 +80,301 @@ const portfolioController = {
     try {
       const { id } = req.params;
       const [rows] = await pool.execute(
-        'SELECT * FROM portfolio_items WHERE id = ?',
+        "SELECT * FROM portfolio_items WHERE id = ?",
         [id]
       );
-      
+
       if (rows.length === 0) {
-        return sendResponse(res, 404, false, 'Portfolio item not found');
+        return sendResponse(res, 404, false, "Portfolio item not found");
       }
-      
-      return sendResponse(res, 200, true, 'Portfolio item retrieved successfully', rows[0]);
-    } catch (error) {
-      console.error('Error fetching portfolio item:', error);
-      return sendResponse(res, 500, false, 'Failed to fetch portfolio item');
-    }
-  },
 
-  // Create new portfolio item
-  createPortfolioItem: async (req, res) => {
-    try {
-      const { title, description, image_url, project_url, technologies, category } = req.body;
-      
-      const [result] = await pool.execute(
-        'INSERT INTO portfolio_items (title, description, image_url, project_url, technologies, category) VALUES (?, ?, ?, ?, ?, ?)',
-        [title, description, image_url, project_url, JSON.stringify(technologies), category]
+      return sendResponse(
+        res,
+        200,
+        true,
+        "Portfolio item retrieved successfully",
+        rows[0]
       );
-      
-      return sendResponse(res, 201, true, 'Portfolio item created successfully', { id: result.insertId });
     } catch (error) {
-      console.error('Error creating portfolio item:', error);
-      return sendResponse(res, 500, false, 'Failed to create portfolio item');
+      console.error("Error fetching portfolio item:", error);
+      return sendResponse(res, 500, false, "Failed to fetch portfolio item");
     }
   },
 
-  // Update portfolio item
-  updatePortfolioItem: async (req, res) => {
+  // Create new portfolio item (admin)
+  createItem: async (req, res) => {
+    try {
+      const {
+        title,
+        description,
+        project_url,
+        technologies,
+        category,
+        status = "published",
+        featured = false,
+      } = req.body;
+
+      // Handle image upload
+      let image_url = null;
+      if (req.file) {
+        image_url = `/uploads/images/${req.file.filename}`;
+      }
+
+      // Get next display order
+      const [orderResult] = await pool.execute(
+        "SELECT COALESCE(MAX(display_order), 0) + 1 as next_order FROM portfolio_items"
+      );
+      const display_order = orderResult[0].next_order;
+
+      const [result] = await pool.execute(
+        "INSERT INTO portfolio_items (title, description, image_url, project_url, technologies, category, display_order, status, featured) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        [
+          title,
+          description,
+          image_url,
+          project_url,
+          JSON.stringify(technologies),
+          category,
+          display_order,
+          status,
+          featured,
+        ]
+      );
+
+      return sendResponse(
+        res,
+        201,
+        true,
+        "Portfolio item created successfully",
+        { id: result.insertId }
+      );
+    } catch (error) {
+      console.error("Error creating portfolio item:", error);
+      return sendResponse(res, 500, false, "Failed to create portfolio item");
+    }
+  },
+
+  // Update portfolio item (admin)
+  updateItem: async (req, res) => {
     try {
       const { id } = req.params;
-      const { title, description, image_url, project_url, technologies, category } = req.body;
-      
-      const [result] = await pool.execute(
-        'UPDATE portfolio_items SET title = ?, description = ?, image_url = ?, project_url = ?, technologies = ?, category = ?, updated_at = NOW() WHERE id = ?',
-        [title, description, image_url, project_url, JSON.stringify(technologies), category, id]
-      );
-      
-      if (result.affectedRows === 0) {
-        return sendResponse(res, 404, false, 'Portfolio item not found');
-      }
-      
-      return sendResponse(res, 200, true, 'Portfolio item updated successfully');
-    } catch (error) {
-      console.error('Error updating portfolio item:', error);
-      return sendResponse(res, 500, false, 'Failed to update portfolio item');
-    }
-  },
+      const {
+        title,
+        description,
+        project_url,
+        technologies,
+        category,
+        status,
+        featured,
+      } = req.body;
 
-  // Delete portfolio item
-  deletePortfolioItem: async (req, res) => {
-    try {
-      const { id } = req.params;
-      
-      const [result] = await pool.execute(
-        'DELETE FROM portfolio_items WHERE id = ?',
+      // Check if item exists
+      const [existingItem] = await pool.execute(
+        "SELECT image_url FROM portfolio_items WHERE id = ?",
         [id]
       );
-      
-      if (result.affectedRows === 0) {
-        return sendResponse(res, 404, false, 'Portfolio item not found');
+
+      if (existingItem.length === 0) {
+        return sendResponse(res, 404, false, "Portfolio item not found");
       }
-      
-      return sendResponse(res, 200, true, 'Portfolio item deleted successfully');
+
+      // Handle image upload
+      let image_url = existingItem[0].image_url;
+      if (req.file) {
+        // Archive old image if it exists
+        archiveImage(image_url);
+        image_url = `/uploads/images/${req.file.filename}`;
+      }
+
+      const [result] = await pool.execute(
+        "UPDATE portfolio_items SET title = ?, description = ?, image_url = ?, project_url = ?, technologies = ?, category = ?, status = ?, featured = ?, updated_at = NOW() WHERE id = ?",
+        [
+          title,
+          description,
+          image_url,
+          project_url,
+          JSON.stringify(technologies),
+          category,
+          status,
+          featured,
+          id,
+        ]
+      );
+
+      return sendResponse(
+        res,
+        200,
+        true,
+        "Portfolio item updated successfully"
+      );
     } catch (error) {
-      console.error('Error deleting portfolio item:', error);
-      return sendResponse(res, 500, false, 'Failed to delete portfolio item');
+      console.error("Error updating portfolio item:", error);
+      return sendResponse(res, 500, false, "Failed to update portfolio item");
     }
-  }
+  },
+
+  // Delete portfolio item (admin)
+  deleteItem: async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      // Get image URL before deletion
+      const [item] = await pool.execute(
+        "SELECT image_url FROM portfolio_items WHERE id = ?",
+        [id]
+      );
+
+      if (item.length === 0) {
+        return sendResponse(res, 404, false, "Portfolio item not found");
+      }
+
+      // Archive image file if it exists
+      archiveImage(item[0].image_url);
+
+      const [result] = await pool.execute(
+        "DELETE FROM portfolio_items WHERE id = ?",
+        [id]
+      );
+
+      return sendResponse(
+        res,
+        200,
+        true,
+        "Portfolio item deleted successfully"
+      );
+    } catch (error) {
+      console.error("Error deleting portfolio item:", error);
+      return sendResponse(res, 500, false, "Failed to delete portfolio item");
+    }
+  },
+
+  // Reorder portfolio items (admin)
+  reorderItems: async (req, res) => {
+    try {
+      const { items } = req.body; // Array of {id, display_order}
+
+      if (!Array.isArray(items)) {
+        return sendResponse(res, 400, false, "Items array is required");
+      }
+
+      // Use transaction for atomic reordering
+      const connection = await pool.getConnection();
+      await connection.beginTransaction();
+
+      try {
+        for (const item of items) {
+          await connection.execute(
+            "UPDATE portfolio_items SET display_order = ? WHERE id = ?",
+            [item.display_order, item.id]
+          );
+        }
+
+        await connection.commit();
+        return sendResponse(
+          res,
+          200,
+          true,
+          "Portfolio items reordered successfully"
+        );
+      } catch (error) {
+        await connection.rollback();
+        throw error;
+      } finally {
+        connection.release();
+      }
+    } catch (error) {
+      console.error("Error reordering items:", error);
+      return sendResponse(res, 500, false, "Failed to reorder items");
+    }
+  },
+
+  // Toggle featured status (admin)
+  toggleFeatured: async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      const [result] = await pool.execute(
+        "UPDATE portfolio_items SET featured = NOT featured, updated_at = NOW() WHERE id = ?",
+        [id]
+      );
+
+      if (result.affectedRows === 0) {
+        return sendResponse(res, 404, false, "Portfolio item not found");
+      }
+
+      return sendResponse(
+        res,
+        200,
+        true,
+        "Featured status toggled successfully"
+      );
+    } catch (error) {
+      console.error("Error toggling featured status:", error);
+      return sendResponse(res, 500, false, "Failed to toggle featured status");
+    }
+  },
+
+  // Update status (admin)
+  updateStatus: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+
+      if (!["draft", "published", "archived"].includes(status)) {
+        return sendResponse(res, 400, false, "Invalid status value");
+      }
+
+      const [result] = await pool.execute(
+        "UPDATE portfolio_items SET status = ?, updated_at = NOW() WHERE id = ?",
+        [status, id]
+      );
+
+      if (result.affectedRows === 0) {
+        return sendResponse(res, 404, false, "Portfolio item not found");
+      }
+
+      return sendResponse(res, 200, true, "Status updated successfully");
+    } catch (error) {
+      console.error("Error updating status:", error);
+      return sendResponse(res, 500, false, "Failed to update status");
+    }
+  },
+
+  // Get archived images (admin)
+  getArchivedImages: async (req, res) => {
+    try {
+      const archivedDir = path.join(__dirname, "../../uploads/archived");
+
+      if (!fs.existsSync(archivedDir)) {
+        return sendResponse(res, 200, true, "No archived images found", []);
+      }
+
+      const files = fs.readdirSync(archivedDir);
+      const archivedImages = files
+        .filter((file) => {
+          const ext = path.extname(file).toLowerCase();
+          return [".jpg", ".jpeg", ".png", ".gif", ".webp"].includes(ext);
+        })
+        .map((file) => ({
+          filename: file,
+          path: `/uploads/archived/${file}`,
+          size: fs.statSync(path.join(archivedDir, file)).size,
+          created: fs.statSync(path.join(archivedDir, file)).birthtime,
+        }))
+        .sort((a, b) => b.created - a.created);
+
+      return sendResponse(
+        res,
+        200,
+        true,
+        "Archived images retrieved successfully",
+        archivedImages
+      );
+    } catch (error) {
+      console.error("Error getting archived images:", error);
+      return sendResponse(res, 500, false, "Failed to get archived images");
+    }
+  },
 };
 
-module.exports = portfolioController; 
+module.exports = portfolioController;
