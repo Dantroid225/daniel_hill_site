@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import ContactForm from '@/components/forms/ContactForm';
+import Avatar from '@/components/ui/Avatar';
 
 const ContactPage: React.FC = () => {
   return (
@@ -13,6 +14,9 @@ const ContactPage: React.FC = () => {
           className='max-w-4xl mx-auto'
         >
           <div className='text-center mb-12'>
+            <div className='flex justify-center mb-6'>
+              <Avatar size='small' />
+            </div>
             <h1 className='text-4xl md:text-5xl font-bold mb-8'>
               Get In <span className='gradient-text'>Touch</span>
             </h1>

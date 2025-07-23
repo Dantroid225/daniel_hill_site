@@ -6,6 +6,7 @@ require("dotenv").config({ path: path.join(__dirname, "../.env") });
 
 const apiRoutes = require("./routes/api");
 const { connectDB } = require("./config/database");
+const emailService = require("./utils/emailService");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -134,11 +135,16 @@ app.use((err, req, res, next) => {
 const startServer = async () => {
   try {
     await connectDB();
+
+    // Initialize email service
+    await emailService.initialize();
+
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
       console.log(`Test endpoint: http://localhost:${PORT}/test`);
       console.log(`Health check: http://localhost:${PORT}/health`);
       console.log(`API base: http://localhost:${PORT}/api`);
+      console.log(`Email service status:`, emailService.getStatus());
     });
   } catch (error) {
     console.error("Failed to start server:", error);

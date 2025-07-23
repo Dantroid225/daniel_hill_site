@@ -1,5 +1,10 @@
 const { pool } = require("../config/database");
 const { sendResponse } = require("../utils/responseHelper");
+const {
+  validatePortfolioItem,
+  sanitizeInput,
+  validateFileUpload,
+} = require("../utils/validation");
 const fs = require("fs");
 const path = require("path");
 
@@ -104,6 +109,7 @@ const portfolioController = {
   // Create new portfolio item (admin)
   createItem: async (req, res) => {
     try {
+      // Use sanitized data from validation middleware
       const {
         title,
         description,
@@ -112,11 +118,18 @@ const portfolioController = {
         category,
         status = "published",
         featured = false,
-      } = req.body;
+      } = req.sanitizedData || req.body;
 
       // Handle image upload
       let image_url = null;
       if (req.file) {
+        // Validate file upload
+        const fileValidation = validateFileUpload(req.file);
+        if (!fileValidation.isValid) {
+          return sendResponse(res, 400, false, "Invalid file upload", {
+            errors: fileValidation.errors,
+          });
+        }
         image_url = `/uploads/images/${req.file.filename}`;
       }
 
@@ -158,6 +171,7 @@ const portfolioController = {
   updateItem: async (req, res) => {
     try {
       const { id } = req.params;
+      // Use sanitized data from validation middleware
       const {
         title,
         description,
@@ -166,7 +180,7 @@ const portfolioController = {
         category,
         status,
         featured,
-      } = req.body;
+      } = req.sanitizedData || req.body;
 
       // Check if item exists
       const [existingItem] = await pool.execute(
@@ -181,6 +195,13 @@ const portfolioController = {
       // Handle image upload
       let image_url = existingItem[0].image_url;
       if (req.file) {
+        // Validate file upload
+        const fileValidation = validateFileUpload(req.file);
+        if (!fileValidation.isValid) {
+          return sendResponse(res, 400, false, "Invalid file upload", {
+            errors: fileValidation.errors,
+          });
+        }
         // Archive old image if it exists
         archiveImage(image_url);
         image_url = `/uploads/images/${req.file.filename}`;

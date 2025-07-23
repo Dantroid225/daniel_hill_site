@@ -4,10 +4,11 @@ import { Link } from 'react-router-dom';
 import { ROUTES } from '@/constants';
 
 import AnimatedBackground from '@/components/ui/AnimatedBackground';
+import Avatar from '@/components/ui/Avatar';
 
 const Hero: React.FC = () => {
   return (
-    <section className='min-h-screen flex items-center justify-center relative overflow-hidden'>
+    <section className='min-h-screen flex items-center justify-center relative overflow-hidden pt-20'>
       {/* Background gradient */}
       <div className='absolute inset-0 gradient-primary opacity-10' />
 
@@ -21,6 +22,9 @@ const Hero: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: 'easeOut' }}
         >
+          <div className='mb-8'>
+            <Avatar size='large' className='mb-6' />
+          </div>
           <h1 className='text-5xl md:text-7xl font-bold mb-6'>
             Hi, I'm <span className='gradient-text'>Daniel Hill</span>
           </h1>

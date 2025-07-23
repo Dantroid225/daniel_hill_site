@@ -2,6 +2,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const sharp = require("sharp");
+const { validateFileUpload } = require("../utils/validation");
 
 // Ensure upload directory exists
 const uploadDir = path.join(__dirname, "../../uploads/images");
@@ -52,6 +53,20 @@ const upload = multer({
 const processImage = async (req, res, next) => {
   if (!req.file) {
     return next();
+  }
+
+  // Additional validation using our validation utilities
+  const fileValidation = validateFileUpload(req.file);
+  if (!fileValidation.isValid) {
+    // Remove the uploaded file if validation fails
+    if (fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    return res.status(400).json({
+      success: false,
+      message: "File validation failed",
+      errors: fileValidation.errors,
+    });
   }
 
   try {

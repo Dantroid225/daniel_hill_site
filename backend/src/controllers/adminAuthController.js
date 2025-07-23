@@ -2,13 +2,19 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { pool } = require("../config/database");
 const { sendResponse } = require("../utils/responseHelper");
+const {
+  validateEmail,
+  validatePassword,
+  sanitizeInput,
+} = require("../utils/validation");
 const User = require("../models/User");
 
 const adminAuthController = {
   // Admin login with secure password verification
   login: async (req, res) => {
     try {
-      const { email, password } = req.body;
+      // Use sanitized data from validation middleware
+      const { email, password } = req.sanitizedData || req.body;
 
       console.log("Admin login attempt for email:", email);
 

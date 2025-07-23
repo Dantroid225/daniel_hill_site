@@ -2,7 +2,7 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Layout from './components/layout/Layout';
 import HomePage from './pages/home/HomePage';
-import AboutPage from './pages/about/AboutPage';
+import ExperiencePage from './pages/experience/ExperiencePage';
 import ProjectsPage from './pages/projects/ProjectsPage';
 import ContactPage from './pages/contact/ContactPage';
 import BlogPage from './pages/blog/BlogPage';
@@ -27,10 +27,10 @@ function App() {
             }
           />
           <Route
-            path='/about'
+            path='/experience'
             element={
               <Layout>
-                <AboutPage />
+                <ExperiencePage />
               </Layout>
             }
           />

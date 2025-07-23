@@ -1,9 +1,10 @@
 export const APP_NAME = 'DH Portfolio';
-export const APP_DESCRIPTION = 'Personal portfolio website showcasing projects and skills';
+export const APP_DESCRIPTION =
+  'Personal portfolio website showcasing projects and skills';
 
 export const ROUTES = {
   HOME: '/',
-  ABOUT: '/about',
+  EXPERIENCE: '/experience',
   PROJECTS: '/projects',
   CONTACT: '/contact',
   BLOG: '/blog',
@@ -25,4 +26,4 @@ export const TECHNOLOGIES = [
   'Tailwind CSS',
   'Framer Motion',
   'Vite',
-] as const; 
+] as const;

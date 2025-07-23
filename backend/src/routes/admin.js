@@ -8,9 +8,13 @@ const {
   processImage,
   handleUploadError,
 } = require("../middleware/upload");
+const {
+  validateAdminLogin,
+  validatePortfolioItem,
+} = require("../middleware/validation");
 
 // Admin authentication routes
-router.post("/login", adminAuthController.login);
+router.post("/login", validateAdminLogin, adminAuthController.login);
 router.post("/logout", authenticateAdmin, adminAuthController.logout);
 router.get("/profile", authenticateAdmin, adminAuthController.getProfile);
 router.put(
@@ -32,6 +36,7 @@ router.post(
   upload.single("image"),
   processImage,
   handleUploadError,
+  validatePortfolioItem,
   portfolioController.createItem
 );
 router.put(
@@ -40,6 +45,7 @@ router.put(
   upload.single("image"),
   processImage,
   handleUploadError,
+  validatePortfolioItem,
   portfolioController.updateItem
 );
 router.delete(
