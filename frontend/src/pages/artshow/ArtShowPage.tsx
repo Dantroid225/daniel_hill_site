@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import testHallImage from '@/assets/test_hall.png';
+import frameImage from '@/assets/frame_test.png';
 
 interface ArtCard {
   id: number;
@@ -9,6 +9,8 @@ interface ArtCard {
   width: number;
   height: number;
   opacity: number;
+  imageUrl?: string;
+  aspectRatio: number;
 }
 
 const ArtShowPage: React.FC = () => {
@@ -24,10 +26,45 @@ const ArtShowPage: React.FC = () => {
   const [lastCardX, setLastCardX] = useState(100); // Starting position
   const [containerHeight, setContainerHeight] = useState(800);
 
-  // Generate a new art card with random positioning
+  // Sample art project images for testing
+  const sampleArtImages = [
+    '/uploads/images/image-1753244077780-587641624_optimized.jpg',
+    // Add more sample images here
+  ];
+
+  // Generate a new art card with random positioning and proportional sizing
   const generateArtCard = useCallback(() => {
-    const cardWidth = Math.random() * 250 + 200; // 200-450px width (larger on average)
-    const cardHeight = Math.random() * 250 + 200; // 200-450px height (larger on average)
+    // Random aspect ratio for art projects (portrait, landscape, square)
+    const aspectRatios = [0.75, 1, 1.33, 1.5, 1.77]; // Common art aspect ratios
+    const aspectRatio =
+      aspectRatios[Math.floor(Math.random() * aspectRatios.length)];
+
+    // Base size constraints
+    const maxWidth = 400;
+    const maxHeight = 500;
+    const minWidth = 200;
+    const minHeight = 150;
+
+    // Calculate dimensions based on aspect ratio within constraints
+    let cardWidth, cardHeight;
+
+    if (aspectRatio >= 1) {
+      // Landscape or square - width is the limiting factor
+      cardWidth = Math.random() * (maxWidth - minWidth) + minWidth;
+      cardHeight = cardWidth / aspectRatio;
+      if (cardHeight > maxHeight) {
+        cardHeight = maxHeight;
+        cardWidth = cardHeight * aspectRatio;
+      }
+    } else {
+      // Portrait - height is the limiting factor
+      cardHeight = Math.random() * (maxHeight - minHeight) + minHeight;
+      cardWidth = cardHeight * aspectRatio;
+      if (cardWidth > maxWidth) {
+        cardWidth = maxWidth;
+        cardHeight = cardWidth / aspectRatio;
+      }
+    }
 
     // Ensure minimum spacing between cards (50% more spacing)
     const minSpacing = 150; // Increased from 100
@@ -45,6 +82,10 @@ const ArtShowPage: React.FC = () => {
     // Random opacity for variety
     const opacity = Math.random() * 0.3 + 0.7; // 0.7-1.0 opacity
 
+    // Random art image (for testing)
+    const imageUrl =
+      sampleArtImages[Math.floor(Math.random() * sampleArtImages.length)];
+
     const newCard: ArtCard = {
       id: Date.now() + Math.random(),
       x: newX,
@@ -52,6 +93,8 @@ const ArtShowPage: React.FC = () => {
       width: cardWidth,
       height: cardHeight,
       opacity: opacity,
+      imageUrl: imageUrl,
+      aspectRatio: aspectRatio,
     };
 
     // Update lastCardX to the end position of this card (x + width)
@@ -94,14 +137,45 @@ const ArtShowPage: React.FC = () => {
     let currentX = 100;
 
     for (let i = 0; i < 5; i++) {
-      const cardWidth = Math.random() * 250 + 200; // 200-450px width (larger on average)
-      const cardHeight = Math.random() * 250 + 200; // 200-450px height (larger on average)
+      // Random aspect ratio for art projects
+      const aspectRatios = [0.75, 1, 1.33, 1.5, 1.77];
+      const aspectRatio =
+        aspectRatios[Math.floor(Math.random() * aspectRatios.length)];
+
+      // Calculate dimensions based on aspect ratio
+      const maxWidth = 400;
+      const maxHeight = 500;
+      const minWidth = 200;
+      const minHeight = 150;
+
+      let cardWidth, cardHeight;
+
+      if (aspectRatio >= 1) {
+        cardWidth = Math.random() * (maxWidth - minWidth) + minWidth;
+        cardHeight = cardWidth / aspectRatio;
+        if (cardHeight > maxHeight) {
+          cardHeight = maxHeight;
+          cardWidth = cardHeight * aspectRatio;
+        }
+      } else {
+        cardHeight = Math.random() * (maxHeight - minHeight) + minHeight;
+        cardWidth = cardHeight * aspectRatio;
+        if (cardWidth > maxWidth) {
+          cardWidth = maxWidth;
+          cardHeight = cardWidth / aspectRatio;
+        }
+      }
+
       const spacing = Math.random() * 300 + 150; // 150-450px spacing (50% more)
 
       const newX = currentX + spacing;
       const minY = 800 * 0.02; // Start from 2% of height (closer to ceiling)
       const maxY = 800 * 0.75 - cardHeight; // Ensure entire card fits above bottom 25%
       const newY = Math.max(minY, Math.random() * (maxY - minY) + minY);
+
+      // Random art image (for testing)
+      const imageUrl =
+        sampleArtImages[Math.floor(Math.random() * sampleArtImages.length)];
 
       initialCards.push({
         id: Date.now() + Math.random() + i,
@@ -110,6 +184,8 @@ const ArtShowPage: React.FC = () => {
         width: cardWidth,
         height: cardHeight,
         opacity: Math.random() * 0.3 + 0.7,
+        imageUrl: imageUrl,
+        aspectRatio: aspectRatio,
       });
 
       currentX = newX + cardWidth; // Update to the end position of this card
@@ -338,19 +414,15 @@ const ArtShowPage: React.FC = () => {
               <div
                 className='relative min-w-max'
                 style={{
-                  backgroundImage: `url(${testHallImage})`,
-                  backgroundRepeat: 'repeat-x',
-                  backgroundSize: 'auto 100%',
-                  backgroundPosition: 'center',
                   width: '300%', // Make it wider than the page
                   height: '800px', // Much taller for art images
                 }}
               >
-                {/* Dynamic Art Cards */}
+                {/* Dynamic Art Cards with Frames */}
                 {artCards.map(card => (
                   <motion.div
                     key={card.id}
-                    className='absolute bg-red-500 rounded-lg shadow-lg'
+                    className='absolute'
                     style={{
                       left: `${card.x}px`,
                       top: `${card.y}px`,
@@ -361,7 +433,31 @@ const ArtShowPage: React.FC = () => {
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: card.opacity, scale: 1 }}
                     transition={{ duration: 0.5, ease: 'easeOut' }}
-                  />
+                  >
+                    {/* Frame Background */}
+                    <div
+                      className='w-full h-full bg-cover bg-center'
+                      style={{
+                        backgroundImage: `url(${frameImage})`,
+                        backgroundSize: '100% 100%',
+                      }}
+                    />
+
+                    {/* Art Image Overlay (positioned in the red area of the frame) */}
+                    {card.imageUrl && (
+                      <div
+                        className='absolute inset-0 bg-cover bg-center'
+                        style={{
+                          backgroundImage: `url(${card.imageUrl})`,
+                          // Position the image in the center area (red area of frame)
+                          top: '15%',
+                          left: '15%',
+                          right: '15%',
+                          bottom: '15%',
+                        }}
+                      />
+                    )}
+                  </motion.div>
                 ))}
               </div>
             </div>
