@@ -8,8 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "server": "node backend/server.js",
-    "server:dev": "nodemon backend/server.js",
+    "server": "node ../backend/src/server.js",
+    "server:dev": "nodemon ../backend/src/server.js",
     "dev:full": "concurrently \"npm run server:dev\" \"npm run dev\""
   },
   "dependencies": {
