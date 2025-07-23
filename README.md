@@ -95,38 +95,98 @@ daniel_hill_site/
 2. **Install dependencies**
 
    ```bash
-   # Install frontend dependencies
-   cd frontend
-   npm install
-
-   # Install backend dependencies
-   cd ../backend
-   npm install
+   # Install all dependencies (frontend + backend)
+   npm run install:all
    ```
+
+## 🚀 Deployment
+
+### AWS Deployment
+
+This project includes comprehensive AWS deployment configuration using Terraform, Docker, and GitHub Actions.
+
+#### Quick Start
+
+1. **Prerequisites**
+
+   - AWS Account with appropriate permissions
+   - Domain name with Route53 hosted zone
+   - Terraform installed locally
+   - Docker installed locally
+
+2. **Deploy Infrastructure**
+
+   ```bash
+   cd infrastructure/terraform
+   cp terraform.tfvars.example terraform.tfvars
+   # Edit terraform.tfvars with your values
+   terraform init
+   terraform plan
+   terraform apply
+   ```
+
+3. **Configure GitHub Secrets**
+   Add the required secrets to your GitHub repository for CI/CD.
+
+4. **Deploy Application**
+   Push to the `main` branch to trigger automatic deployment.
+
+#### Detailed Guide
+
+See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for a comprehensive deployment guide.
+
+#### Infrastructure Components
+
+- **VPC** - Custom networking with public/private subnets
+- **EC2** - Auto-scaling application servers
+- **RDS** - MySQL database with automated backups
+- **S3** - Static asset storage
+- **CloudFront** - Global content delivery network
+- **Route53** - DNS management
+- **ACM** - SSL certificate management
+
+#### Cost Estimation
+
+Monthly costs (us-east-1): ~$25.50
+
+- EC2 t3.micro: ~$8.50
+- RDS db.t3.micro: ~$15.00
+- CloudFront: ~$1.00
+- S3: ~$0.50
+- Route53: ~$0.50
+
+### Local Development
+
+# Install backend dependencies
+
+cd ../backend
+npm install
+
+````
 
 3. **Set up environment variables**
 
-   Create `.env` file in the backend directory:
+Create `.env` file in the backend directory:
 
-   ```env
-   # Database
-   DB_HOST=localhost
-   DB_USER=your_username
-   DB_PASSWORD=your_password
-   DB_NAME=dh_portfolio
-   DB_PORT=3306
+```env
+# Database
+DB_HOST=localhost
+DB_USER=your_username
+DB_PASSWORD=your_password
+DB_NAME=dh_portfolio
+DB_PORT=3306
 
-   # JWT
-   JWT_SECRET=your-super-secret-jwt-key
-   JWT_EXPIRE=24h
+# JWT
+JWT_SECRET=your-super-secret-jwt-key
+JWT_EXPIRE=24h
 
-   # Server
-   PORT=5000
-   NODE_ENV=development
+# Server
+PORT=5000
+NODE_ENV=development
 
-   # CORS (Development)
-   ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173,http://127.0.0.1:5173,http://127.0.0.1:3000
-   ```
+# CORS (Development)
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173,http://127.0.0.1:5173,http://127.0.0.1:3000
+````
 
 4. **Set up the database**
 
