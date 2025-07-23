@@ -42,10 +42,16 @@ const ProjectManagement: React.FC = () => {
   };
 
   const handleDelete = async (projectId: number) => {
-    if (window.confirm('Are you sure you want to delete this project?')) {
+    if (
+      window.confirm(
+        'Are you sure you want to delete this project? This action cannot be undone.'
+      )
+    ) {
       try {
         await api.delete(`/api/admin/portfolio/${projectId}`);
         setProjects(projects.filter(p => p.id !== projectId));
+        // Show success message (you could add a success state if needed)
+        console.log('Project deleted successfully');
       } catch (error) {
         console.error('Failed to delete project:', error);
         setError('Failed to delete project');
@@ -93,37 +99,35 @@ const ProjectManagement: React.FC = () => {
     setShowForm(true);
   };
 
-  const handleSaveProject = async (projectData: {
-    id?: number;
-    title: string;
-    description: string;
-    image_url: string;
-    project_url: string;
-    technologies: string[];
-    category: string;
-    display_order: number;
-    status: 'draft' | 'published' | 'archived';
-    featured: boolean;
-  }) => {
+  const handleSaveProject = async (projectData: FormData) => {
     setIsSubmitting(true);
     setError('');
 
     try {
       if (editingProject) {
         // Update existing project
-        await api.put(`/api/admin/portfolio/${editingProject.id}`, projectData);
-        setProjects(
-          projects.map(p =>
-            p.id === editingProject.id
-              ? { ...projectData, id: editingProject.id }
-              : p
-          )
+        await api.put(
+          `/api/admin/portfolio/${editingProject.id}`,
+          projectData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          }
         );
+
+        // Refresh the projects list to get updated data
+        await fetchProjects();
       } else {
         // Create new project
-        const response = await api.post('/api/admin/portfolio', projectData);
-        const newProject = { ...projectData, id: response.data.data.id };
-        setProjects([newProject, ...projects]);
+        await api.post('/api/admin/portfolio', projectData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+
+        // Refresh the projects list to get the new project
+        await fetchProjects();
       }
 
       setShowForm(false);

@@ -19,7 +19,7 @@ interface Project {
 
 interface ProjectFormProps {
   project?: Project | null;
-  onSave: (project: Project) => void;
+  onSave: (project: FormData) => void;
   onCancel: () => void;
   isSubmitting?: boolean;
 }
@@ -43,6 +43,8 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [technologyInput, setTechnologyInput] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
 
   useEffect(() => {
     if (project) {
@@ -54,6 +56,9 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
             ? JSON.parse(project.technologies)
             : [],
       });
+      if (project.image_url) {
+        setImagePreview(project.image_url);
+      }
     }
   }, [project]);
 
@@ -80,19 +85,36 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validateForm()) {
       return;
     }
 
-    const submitData = {
-      ...formData,
-      technologies: formData.technologies,
-    };
+    // Create FormData for file upload
+    const submitFormData = new FormData();
 
-    onSave(submitData);
+    // Add all form fields
+    submitFormData.append('title', formData.title);
+    submitFormData.append('description', formData.description);
+    submitFormData.append('project_url', formData.project_url);
+    submitFormData.append('category', formData.category);
+    submitFormData.append('display_order', formData.display_order.toString());
+    submitFormData.append('status', formData.status);
+    submitFormData.append('featured', formData.featured.toString());
+    submitFormData.append(
+      'technologies',
+      JSON.stringify(formData.technologies)
+    );
+
+    // Add image file if selected
+    if (selectedFile) {
+      submitFormData.append('image', selectedFile);
+    }
+
+    // Call onSave with FormData
+    onSave(submitFormData);
   };
 
   const handleInputChange = (field: keyof Project, value: string | boolean) => {
@@ -128,13 +150,12 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Create a preview URL
+      setSelectedFile(file);
+
+      // Create a preview URL for display
       const reader = new FileReader();
       reader.onload = e => {
-        setFormData(prev => ({
-          ...prev,
-          image_url: e.target?.result as string,
-        }));
+        setImagePreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -280,10 +301,10 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
               onChange={handleImageChange}
               className='block w-full text-sm text-foreground file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90'
             />
-            {formData.image_url && (
+            {imagePreview && (
               <div className='mt-2'>
                 <img
-                  src={formData.image_url}
+                  src={imagePreview}
                   alt='Preview'
                   className='w-32 h-32 object-cover rounded border'
                 />
