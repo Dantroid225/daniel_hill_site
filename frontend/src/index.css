@@ -132,15 +132,15 @@
 
   /* Gradient backgrounds */
   .gradient-primary {
-    background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
   }
 
   .gradient-secondary {
-    background: linear-gradient(135deg, #8B5CF6 0%, #10B981 100%);
+    background: linear-gradient(135deg, #8b5cf6 0%, #10b981 100%);
   }
 
   .gradient-accent {
-    background: linear-gradient(135deg, #10B981 0%, #3B82F6 100%);
+    background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);
   }
 
   /* Legacy button styles for backward compatibility */
@@ -198,5 +198,83 @@
 
   .animate-glow {
     animation: glow 2s ease-in-out infinite alternate;
+  }
+}
+
+/* Custom scrollbar styles for the art show */
+.scrollbar-hide {
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+  scrollbar-width: none; /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
+}
+
+/* Line clamp utility for text truncation */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Gradient text effect */
+.gradient-text {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Museum frame hover effects */
+.museum-frame {
+  transition: all 0.3s ease;
+}
+
+.museum-frame:hover {
+  transform: scale(1.05) rotate(0deg);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* Smooth scrolling for the art gallery */
+.art-gallery-scroll {
+  scroll-behavior: smooth;
+}
+
+/* Custom animations for art pieces */
+@keyframes artPieceFloat {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.art-piece-float {
+  animation: artPieceFloat 3s ease-in-out infinite;
+}
+
+/* Museum hallway lighting effect */
+.museum-lighting {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 20%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.1) 80%,
+    transparent 100%
+  );
+  animation: lightingSweep 4s ease-in-out infinite;
+}
+
+@keyframes lightingSweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
   }
 }

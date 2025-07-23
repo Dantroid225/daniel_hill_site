@@ -49,7 +49,10 @@ CREATE INDEX idx_users_email ON users(email);
 -- Insert sample portfolio data
 INSERT INTO portfolio_items (title, description, image_url, project_url, technologies, category, display_order, featured) VALUES
 ('Sample Project 1', 'A sample portfolio project description', '/uploads/images/image-1753244077780-587641624_optimized.jpg', 'https://github.com/sample/project1', '["React", "Node.js", "MySQL"]', 'Web Development', 1, true),
-('Sample Project 2', 'Another sample portfolio project', '/uploads/images/image-1753244077780-587641624.gif', 'https://github.com/sample/project2', '["Vue.js", "Express", "MongoDB"]', 'Full Stack', 2, false);
+('Sample Project 2', 'Another sample portfolio project', '/uploads/images/image-1753244077780-587641624.gif', 'https://github.com/sample/project2', '["Vue.js", "Express", "MongoDB"]', 'Full Stack', 2, false),
+('Digital Abstract Composition', 'A vibrant digital artwork exploring color theory and geometric patterns', '/uploads/images/art-abstract.jpg', 'https://artstation.com/abstract-composition', '["Photoshop", "Digital Art", "Color Theory"]', 'art', 3, true),
+('Pixel Art Character Design', 'A detailed pixel art character created with modern digital techniques', '/uploads/images/art-pixel.jpg', 'https://deviantart.com/pixel-character', '["Aseprite", "Pixel Art", "Character Design"]', 'art', 4, false),
+('3D Sculpture Study', 'A digital 3D sculpture exploring form and texture', '/uploads/images/art-3d.jpg', 'https://sketchfab.com/3d-sculpture', '["Blender", "3D Modeling", "Sculpture"]', 'art', 5, true);
 
 -- Note: Admin user will be created via the setup script with proper password hashing
 -- Run: npm run setup 

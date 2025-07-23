@@ -159,6 +159,58 @@ export const portfolioApi = {
     }
   },
 
+  // Get projects by category
+  getProjectsByCategory: async (category: string): Promise<Project[]> => {
+    try {
+      console.log(
+        'Fetching projects by category from:',
+        `${API_BASE_URL}/api/portfolio/category/${category}`
+      );
+      const response = await api.get(`/api/portfolio/category/${category}`);
+      console.log('API Response for category projects:', response.data);
+
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Failed to fetch projects');
+      }
+
+      return response.data.data.map(
+        (item: {
+          id: number;
+          title: string;
+          description: string;
+          image_url?: string;
+          technologies: string | string[];
+          project_url?: string;
+          featured: number | boolean;
+          created_at: string;
+          updated_at: string;
+        }) => {
+          const imageUrl = item.image_url
+            ? `${API_BASE_URL}${item.image_url}`
+            : '';
+          console.log('Generated image URL (category projects):', imageUrl);
+          return {
+            id: item.id,
+            title: item.title,
+            description: item.description,
+            imageUrl: imageUrl,
+            technologies: Array.isArray(item.technologies)
+              ? item.technologies
+              : JSON.parse(item.technologies || '[]'),
+            githubUrl: item.project_url || '',
+            liveUrl: item.project_url || '',
+            featured: item.featured === 1 || item.featured === true,
+            createdAt: item.created_at,
+            updatedAt: item.updated_at,
+          };
+        }
+      );
+    } catch (error) {
+      console.error('Error in getProjectsByCategory:', error);
+      throw error;
+    }
+  },
+
   // Get project by ID
   getProjectById: async (id: number): Promise<Project> => {
     try {

@@ -12,6 +12,7 @@ const Header: React.FC = () => {
     { path: ROUTES.HOME, label: 'Home' },
     { path: ROUTES.EXPERIENCE, label: 'Experience' },
     { path: ROUTES.PROJECTS, label: 'Projects' },
+    { path: ROUTES.ARTSHOW, label: 'Art Show' },
     { path: ROUTES.CONTACT, label: 'Contact' },
     { path: ROUTES.BLOG, label: 'Blog' },
   ];

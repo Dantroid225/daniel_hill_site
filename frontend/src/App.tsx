@@ -4,6 +4,7 @@ import Layout from './components/layout/Layout';
 import HomePage from './pages/home/HomePage';
 import ExperiencePage from './pages/experience/ExperiencePage';
 import ProjectsPage from './pages/projects/ProjectsPage';
+import ArtShowPage from './pages/artshow/ArtShowPage';
 import ContactPage from './pages/contact/ContactPage';
 import BlogPage from './pages/blog/BlogPage';
 import AdminLoginPage from './pages/admin/AdminLoginPage';
@@ -39,6 +40,14 @@ function App() {
             element={
               <Layout>
                 <ProjectsPage />
+              </Layout>
+            }
+          />
+          <Route
+            path='/artshow'
+            element={
+              <Layout>
+                <ArtShowPage />
               </Layout>
             }
           />

@@ -1,34 +1,46 @@
--- Stored Procedures for Enhanced Security and Performance
+-- MySQL 8.0.42 Compatible Stored Procedures Setup
+-- This version uses proper DELIMITER syntax for bulk execution
+
+USE dh_portfolio;
+
+-- Set delimiter for procedure creation
+DELIMITER $$
+
+-- Get portfolio items by category (for Art Show)
+DROP PROCEDURE IF EXISTS GetPortfolioItemsByCategory$$
+CREATE PROCEDURE GetPortfolioItemsByCategory(IN p_category VARCHAR(100))
+BEGIN
+    SELECT * FROM portfolio_items 
+    WHERE status = 'published' AND category = p_category
+    ORDER BY display_order ASC, created_at DESC;
+END$$
 
 -- Get all published portfolio items
-DELIMITER //
+DROP PROCEDURE IF EXISTS GetPublishedPortfolioItems$$
 CREATE PROCEDURE GetPublishedPortfolioItems()
 BEGIN
     SELECT * FROM portfolio_items 
     WHERE status = 'published' 
     ORDER BY display_order ASC, created_at DESC;
-END //
-DELIMITER ;
+END$$
 
 -- Get all portfolio items (admin)
-DELIMITER //
+DROP PROCEDURE IF EXISTS GetAllPortfolioItems$$
 CREATE PROCEDURE GetAllPortfolioItems()
 BEGIN
     SELECT * FROM portfolio_items 
     ORDER BY display_order ASC, created_at DESC;
-END //
-DELIMITER ;
+END$$
 
 -- Get portfolio item by ID
-DELIMITER //
+DROP PROCEDURE IF EXISTS GetPortfolioItemById$$
 CREATE PROCEDURE GetPortfolioItemById(IN item_id INT)
 BEGIN
     SELECT * FROM portfolio_items WHERE id = item_id;
-END //
-DELIMITER ;
+END$$
 
 -- Create new portfolio item
-DELIMITER //
+DROP PROCEDURE IF EXISTS CreatePortfolioItem$$
 CREATE PROCEDURE CreatePortfolioItem(
     IN p_title VARCHAR(255),
     IN p_description TEXT,
@@ -55,11 +67,10 @@ BEGIN
     );
     
     SELECT LAST_INSERT_ID() as id;
-END //
-DELIMITER ;
+END$$
 
 -- Update portfolio item
-DELIMITER //
+DROP PROCEDURE IF EXISTS UpdatePortfolioItem$$
 CREATE PROCEDURE UpdatePortfolioItem(
     IN p_id INT,
     IN p_title VARCHAR(255),
@@ -85,47 +96,17 @@ BEGIN
     WHERE id = p_id;
     
     SELECT ROW_COUNT() as affected_rows;
-END //
-DELIMITER ;
+END$$
 
 -- Delete portfolio item
-DELIMITER //
+DROP PROCEDURE IF EXISTS DeletePortfolioItem$$
 CREATE PROCEDURE DeletePortfolioItem(IN p_id INT)
 BEGIN
     DELETE FROM portfolio_items WHERE id = p_id;
-    SELECT ROW_COUNT() as affected_rows;
-END //
-DELIMITER ;
-
--- Reorder portfolio items
-DELIMITER //
-CREATE PROCEDURE ReorderPortfolioItems(IN p_items JSON)
-BEGIN
-    DECLARE i INT DEFAULT 0;
-    DECLARE item_count INT;
-    DECLARE current_item JSON;
-    
-    SET item_count = JSON_LENGTH(p_items);
-    
-    -- Start transaction
-    START TRANSACTION;
-    
-    WHILE i < item_count DO
-        SET current_item = JSON_EXTRACT(p_items, CONCAT('$[', i, ']'));
-        
-        UPDATE portfolio_items 
-        SET display_order = JSON_EXTRACT(current_item, '$.display_order')
-        WHERE id = JSON_EXTRACT(current_item, '$.id');
-        
-        SET i = i + 1;
-    END WHILE;
-    
-    COMMIT;
-END //
-DELIMITER ;
+END$$
 
 -- Toggle featured status
-DELIMITER //
+DROP PROCEDURE IF EXISTS ToggleFeaturedStatus$$
 CREATE PROCEDURE ToggleFeaturedStatus(IN p_id INT)
 BEGIN
     UPDATE portfolio_items 
@@ -133,11 +114,10 @@ BEGIN
     WHERE id = p_id;
     
     SELECT ROW_COUNT() as affected_rows;
-END //
-DELIMITER ;
+END$$
 
 -- Update status
-DELIMITER //
+DROP PROCEDURE IF EXISTS UpdatePortfolioStatus$$
 CREATE PROCEDURE UpdatePortfolioStatus(
     IN p_id INT,
     IN p_status ENUM('draft', 'published', 'archived')
@@ -148,19 +128,17 @@ BEGIN
     WHERE id = p_id;
     
     SELECT ROW_COUNT() as affected_rows;
-END //
-DELIMITER ;
+END$$
 
 -- Get user by email (for authentication)
-DELIMITER //
+DROP PROCEDURE IF EXISTS GetUserByEmail$$
 CREATE PROCEDURE GetUserByEmail(IN p_email VARCHAR(255))
 BEGIN
     SELECT * FROM users WHERE email = p_email;
-END //
-DELIMITER ;
+END$$
 
 -- Create new user
-DELIMITER //
+DROP PROCEDURE IF EXISTS CreateUser$$
 CREATE PROCEDURE CreateUser(
     IN p_name VARCHAR(255),
     IN p_email VARCHAR(255),
@@ -172,11 +150,10 @@ BEGIN
     VALUES (p_name, p_email, p_password, p_role);
     
     SELECT LAST_INSERT_ID() as id;
-END //
-DELIMITER ;
+END$$
 
 -- Create contact inquiry
-DELIMITER //
+DROP PROCEDURE IF EXISTS CreateContactInquiry$$
 CREATE PROCEDURE CreateContactInquiry(
     IN p_name VARCHAR(255),
     IN p_email VARCHAR(255),
@@ -188,20 +165,18 @@ BEGIN
     VALUES (p_name, p_email, p_subject, p_message);
     
     SELECT LAST_INSERT_ID() as id;
-END //
-DELIMITER ;
+END$$
 
 -- Get all contact inquiries (admin)
-DELIMITER //
+DROP PROCEDURE IF EXISTS GetAllContactInquiries$$
 CREATE PROCEDURE GetAllContactInquiries()
 BEGIN
     SELECT * FROM contact_inquiries 
     ORDER BY created_at DESC;
-END //
-DELIMITER ;
+END$$
 
 -- Update contact inquiry status
-DELIMITER //
+DROP PROCEDURE IF EXISTS UpdateContactStatus$$
 CREATE PROCEDURE UpdateContactStatus(
     IN p_id INT,
     IN p_status ENUM('new', 'read', 'replied', 'closed')
@@ -212,51 +187,10 @@ BEGIN
     WHERE id = p_id;
     
     SELECT ROW_COUNT() as affected_rows;
-END //
+END$$
+
+-- Reset delimiter back to semicolon
 DELIMITER ;
 
--- Input validation function
-DELIMITER //
-CREATE FUNCTION ValidateEmail(p_email VARCHAR(255)) 
-RETURNS BOOLEAN
-DETERMINISTIC
-BEGIN
-    DECLARE valid BOOLEAN DEFAULT FALSE;
-    
-    -- Basic email validation
-    IF p_email REGEXP '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$' THEN
-        SET valid = TRUE;
-    END IF;
-    
-    RETURN valid;
-END //
-DELIMITER ;
-
--- Sanitize input function
-DELIMITER //
-CREATE FUNCTION SanitizeInput(p_input TEXT) 
-RETURNS TEXT
-DETERMINISTIC
-BEGIN
-    DECLARE sanitized TEXT;
-    
-    -- Remove potentially dangerous characters
-    SET sanitized = REPLACE(p_input, '<script', '');
-    SET sanitized = REPLACE(sanitized, '</script>', '');
-    SET sanitized = REPLACE(sanitized, 'javascript:', '');
-    SET sanitized = REPLACE(sanitized, 'onload=', '');
-    SET sanitized = REPLACE(sanitized, 'onerror=', '');
-    
-    RETURN sanitized;
-END //
-DELIMITER ; 
-
--- Get portfolio items by category
-DELIMITER //
-CREATE PROCEDURE GetPortfolioItemsByCategory(IN p_category VARCHAR(100))
-BEGIN
-    SELECT * FROM portfolio_items 
-    WHERE status = 'published' AND category = p_category
-    ORDER BY display_order ASC, created_at DESC;
-END //
-DELIMITER ; 
+-- Verify procedures were created
+SHOW PROCEDURE STATUS WHERE Db = 'dh_portfolio'; 
