@@ -10,6 +10,7 @@
     "setup-art": "node scripts/setup-art-projects.js",
     "test-db": "node scripts/test-db-connection.js",
     "test-art-show": "node scripts/test-art-show.js",
+    "db_password": "node scripts/update-admin-password.js",
     "update-sample-data": "node scripts/update-sample-data.js",
     "setup-stored-procedures": "node scripts/setup-stored-procedures.js",
     "test": "jest",
