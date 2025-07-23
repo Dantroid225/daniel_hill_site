@@ -1,6 +1,6 @@
 import React from 'react';
-import Header from '../navigation/Header';
-import Footer from '../navigation/Footer';
+import Header from '@/components/navigation/Header';
+import Footer from '@/components/navigation/Footer';
 import { motion } from 'framer-motion';
 
 interface LayoutProps {
