@@ -25,29 +25,32 @@ const Footer: React.FC = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="bg-background border-t border-border"
+      className='bg-background border-t border-border'
     >
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className='container mx-auto px-4 py-8'>
+        <div className='grid grid-cols-1 md:grid-cols-3 gap-8'>
           {/* Brand Section */}
-          <div className="space-y-4">
-            <Link to={ROUTES.HOME} className="text-2xl font-bold text-primary">
+          <div className='space-y-4'>
+            <Link to={ROUTES.HOME} className='text-2xl font-bold gradient-text'>
               DH
             </Link>
-            <p className="text-muted-foreground max-w-md">
-              Full-stack web developer passionate about creating beautiful, functional, and user-friendly applications.
+            <p className='text-muted-foreground max-w-md'>
+              Full-stack web developer passionate about creating beautiful,
+              functional, and user-friendly applications.
             </p>
           </div>
 
           {/* Navigation Links */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-foreground">Navigation</h3>
-            <nav className="flex flex-col space-y-2">
-              {footerLinks.map((link) => (
+          <div className='space-y-4'>
+            <h3 className='text-lg font-semibold text-foreground'>
+              Navigation
+            </h3>
+            <nav className='flex flex-col space-y-2'>
+              {footerLinks.map(link => (
                 <Link
                   key={link.path}
                   to={link.path}
-                  className="text-muted-foreground hover:text-primary transition-colors"
+                  className='text-muted-foreground hover:text-primary transition-colors'
                 >
                   {link.label}
                 </Link>
@@ -56,16 +59,16 @@ const Footer: React.FC = () => {
           </div>
 
           {/* Social Links */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-foreground">Connect</h3>
-            <div className="flex space-x-4">
-              {socialLinks.map((social) => (
+          <div className='space-y-4'>
+            <h3 className='text-lg font-semibold text-foreground'>Connect</h3>
+            <div className='flex space-x-4'>
+              {socialLinks.map(social => (
                 <a
                   key={social.href}
                   href={social.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-2xl hover:scale-110 transition-transform"
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className='text-2xl hover:scale-110 transition-transform'
                   aria-label={social.label}
                 >
                   {social.icon}
@@ -76,15 +79,18 @@ const Footer: React.FC = () => {
         </div>
 
         {/* Bottom Section */}
-        <div className="border-t border-border mt-8 pt-8 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-          <p className="text-muted-foreground text-sm">
+        <div className='border-t border-border mt-8 pt-8 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0'>
+          <p className='text-muted-foreground text-sm'>
             © {currentYear} Daniel Hill. All rights reserved.
           </p>
-          <div className="flex space-x-6 text-sm text-muted-foreground">
-            <Link to="/privacy" className="hover:text-primary transition-colors">
+          <div className='flex space-x-6 text-sm text-muted-foreground'>
+            <Link
+              to='/privacy'
+              className='hover:text-primary transition-colors'
+            >
               Privacy Policy
             </Link>
-            <Link to="/terms" className="hover:text-primary transition-colors">
+            <Link to='/terms' className='hover:text-primary transition-colors'>
               Terms of Service
             </Link>
           </div>

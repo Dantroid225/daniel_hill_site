@@ -26,6 +26,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     localStorage.setItem('theme', theme);
     document.documentElement.classList.toggle('dark', theme === 'dark');
+    
+    // Update CSS custom properties for smooth transitions
+    document.documentElement.style.setProperty('--theme-transition', 'all 0.3s ease-in-out');
   }, [theme]);
 
   const toggleTheme = () => {
