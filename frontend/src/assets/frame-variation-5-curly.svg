@@ -1,0 +1,44 @@
+<!-- Frame Variation 5: Curly Decorative -->
+<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+  <defs>
+    <filter id="rough5" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence baseFrequency="0.05" numOctaves="3" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.2"/>
+    </filter>
+  </defs>
+
+  <path d="
+    M 40,25 Q 30,12 20,8 Q 10,12 8,22 Q 12,32 22,28
+    Q 32,35 25,45 Q 35,50 45,40 Q 55,30 65,35
+    Q 85,30 105,35 Q 135,30 165,35 Q 195,30 225,35
+    Q 255,30 285,35 Q 315,30 335,35 Q 345,30 355,40
+    Q 365,50 375,45 Q 368,35 378,28 Q 388,32 392,22
+    Q 390,12 380,8 Q 370,12 360,25 L 365,40
+    Q 370,55 365,75 Q 370,105 365,135 Q 370,165 365,195
+    Q 370,225 365,250 L 360,275 Q 370,288 380,292
+    Q 390,288 392,278 Q 388,268 378,272 Q 368,265 375,255
+    Q 365,250 355,260 Q 345,270 335,265 Q 315,270 285,265
+    Q 255,270 225,265 Q 195,270 165,265 Q 135,270 105,265
+    Q 85,270 65,265 Q 55,270 45,260 Q 35,250 25,255
+    Q 32,265 22,272 Q 12,268 8,278 Q 10,288 20,292
+    Q 30,288 40,275 L 35,250 Q 30,225 35,195
+    Q 30,165 35,135 Q 30,105 35,75 Q 30,55 35,40 L 40,25
+    Z
+    M 55,50 L 345,50 L 345,250 L 55,250 Z
+  "
+  fill="white"
+  fill-rule="evenodd"
+  stroke="black"
+  stroke-width="2"
+  filter="url(#rough5)"/>
+
+  <g stroke="black" stroke-width="1" fill="none" opacity="0.5">
+    <path d="M 25,25 Q 20,20 15,25 Q 20,30 25,25" filter="url(#rough5)"/>
+    <path d="M 375,25 Q 380,20 385,25 Q 380,30 375,25" filter="url(#rough5)"/>
+    <path d="M 25,275 Q 20,280 15,275 Q 20,270 25,275" filter="url(#rough5)"/>
+    <path d="M 375,275 Q 380,280 385,275 Q 380,270 375,275" filter="url(#rough5)"/>
+    <path d="M 100,40 Q 105,35 110,40" filter="url(#rough5)"/>
+    <path d="M 200,40 Q 205,35 210,40" filter="url(#rough5)"/>
+    <path d="M 300,40 Q 305,35 310,40" filter="url(#rough5)"/>
+  </g>
+</svg> 

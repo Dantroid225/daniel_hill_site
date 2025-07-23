@@ -1,0 +1,43 @@
+<!-- Frame Variation 10: Rough Textured -->
+<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+  <defs>
+    <filter id="rough10" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence baseFrequency="0.09" numOctaves="4" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="2"/>
+    </filter>
+  </defs>
+
+  <path d="
+    M 28,22 Q 18,8 8,18 Q 12,32 22,28 Q 32,35 38,25
+    Q 48,20 58,25 Q 78,20 98,25 Q 128,20 158,25
+    Q 188,20 218,25 Q 248,20 278,25 Q 308,20 338,25
+    Q 348,20 358,25 Q 368,35 378,28 Q 388,32 392,18
+    Q 382,8 372,22 Q 378,35 372,48 Q 378,68 372,88
+    Q 378,118 372,148 Q 378,178 372,208 Q 378,238 372,258
+    Q 378,275 372,285 Q 382,295 392,285 Q 388,270 378,275
+    Q 368,265 358,270 Q 348,275 338,270 Q 308,275 278,270
+    Q 248,275 218,270 Q 188,275 158,270 Q 128,275 98,270
+    Q 78,275 58,270 Q 48,275 38,265 Q 32,255 22,270
+    Q 12,275 8,285 Q 18,295 28,285 Q 22,270 28,258
+    Q 22,238 28,208 Q 22,178 28,148 Q 22,118 28,88
+    Q 22,68 28,48 Q 22,35 28,22
+    Z
+    M 45,45 L 355,45 L 355,255 L 45,255 Z
+  "
+  fill="white"
+  fill-rule="evenodd"
+  stroke="black"
+  stroke-width="2"
+  filter="url(#rough10)"/>
+
+  <g stroke="black" stroke-width="1.5" fill="none" opacity="0.6">
+    <path d="M 25,25 Q 15,20 10,30 Q 20,35 25,25" filter="url(#rough10)"/>
+    <path d="M 375,25 Q 385,20 390,30 Q 380,35 375,25" filter="url(#rough10)"/>
+    <path d="M 25,275 Q 15,280 10,270 Q 20,265 25,275" filter="url(#rough10)"/>
+    <path d="M 375,275 Q 385,280 390,270 Q 380,265 375,275" filter="url(#rough10)"/>
+    <path d="M 70,30 L 75,25 L 80,30" filter="url(#rough10)"/>
+    <path d="M 150,30 L 155,25 L 160,30" filter="url(#rough10)"/>
+    <path d="M 240,30 L 245,25 L 250,30" filter="url(#rough10)"/>
+    <path d="M 320,30 L 325,25 L 330,30" filter="url(#rough10)"/>
+  </g>
+</svg> 

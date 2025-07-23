@@ -1,0 +1,38 @@
+<!-- Frame Variation 9: Flowing Organic -->
+<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+  <defs>
+    <filter id="rough9" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence baseFrequency="0.04" numOctaves="3" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.5"/>
+    </filter>
+  </defs>
+
+  <path d="
+    M 35,30 Q 25,15 15,20 Q 5,30 10,40 Q 20,50 30,45
+    Q 45,35 60,40 Q 80,35 100,40 Q 130,35 160,40
+    Q 190,35 220,40 Q 250,35 280,40 Q 310,35 340,40
+    Q 355,35 365,45 Q 375,50 385,40 Q 390,30 380,20
+    Q 370,15 360,30 Q 365,45 360,60 Q 365,85 360,110
+    Q 365,140 360,170 Q 365,200 360,230 Q 365,255 360,270
+    Q 370,285 380,280 Q 390,270 385,260 Q 375,250 365,255
+    Q 355,265 340,260 Q 310,265 280,260 Q 250,265 220,260
+    Q 190,265 160,260 Q 130,265 100,260 Q 80,265 60,260
+    Q 45,265 30,255 Q 20,250 10,260 Q 5,270 15,280
+    Q 25,285 35,270 Q 30,255 35,230 Q 30,200 35,170
+    Q 30,140 35,110 Q 30,85 35,60 Q 30,45 35,30
+    Z
+    M 50,55 L 350,55 L 350,245 L 50,245 Z
+  "
+  fill="white"
+  fill-rule="evenodd"
+  stroke="black"
+  stroke-width="2"
+  filter="url(#rough9)"/>
+
+  <g stroke="black" stroke-width="1" fill="none" opacity="0.3">
+    <path d="M 25,35 Q 15,30 20,40 Q 30,45 25,35" filter="url(#rough9)"/>
+    <path d="M 375,35 Q 385,30 380,40 Q 370,45 375,35" filter="url(#rough9)"/>
+    <path d="M 25,265 Q 15,270 20,260 Q 30,255 25,265" filter="url(#rough9)"/>
+    <path d="M 375,265 Q 385,270 380,260 Q 370,255 375,265" filter="url(#rough9)"/>
+  </g>
+</svg> 

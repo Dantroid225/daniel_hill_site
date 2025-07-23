@@ -1,0 +1,43 @@
+<!-- Frame Variation 4: Chunky Corners -->
+<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+  <defs>
+    <filter id="rough4" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence baseFrequency="0.07" numOctaves="2" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5"/>
+    </filter>
+  </defs>
+
+  <path d="
+    M 35,30 Q 25,15 15,10 Q 5,15 10,25 Q 5,35 15,40
+    Q 25,45 35,35 Q 50,25 70,30 Q 90,25 110,30
+    Q 150,25 200,30 Q 250,25 290,30
+    Q 310,25 330,30 Q 350,25 365,35
+    Q 375,45 385,40 Q 395,35 390,25
+    Q 395,15 385,10 Q 375,15 365,30
+    L 370,45 Q 375,60 370,80 Q 375,110 370,140
+    Q 375,170 370,200 Q 375,230 370,255
+    L 365,270 Q 375,285 385,290 Q 395,285 390,275
+    Q 395,265 385,270 Q 375,275 365,265
+    Q 350,275 330,270 Q 310,275 290,270
+    Q 250,275 200,270 Q 150,275 110,270
+    Q 90,275 70,270 Q 50,275 35,265
+    Q 25,275 15,270 Q 5,265 10,275
+    Q 5,285 15,290 Q 25,285 35,270
+    L 30,255 Q 25,230 30,200 Q 25,170 30,140
+    Q 25,110 30,80 Q 25,60 30,45 L 35,30
+    Z
+    M 50,50 L 350,50 L 350,250 L 50,250 Z
+  "
+  fill="white"
+  fill-rule="evenodd"
+  stroke="black"
+  stroke-width="2.5"
+  filter="url(#rough4)"/>
+
+  <g stroke="black" stroke-width="1.5" fill="none" opacity="0.6">
+    <rect x="15" y="15" width="20" height="20" filter="url(#rough4)"/>
+    <rect x="365" y="15" width="20" height="20" filter="url(#rough4)"/>
+    <rect x="15" y="265" width="20" height="20" filter="url(#rough4)"/>
+    <rect x="365" y="265" width="20" height="20" filter="url(#rough4)"/>
+  </g>
+</svg> 

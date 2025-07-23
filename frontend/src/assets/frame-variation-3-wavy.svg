@@ -1,0 +1,40 @@
+<!-- Frame Variation 3: Wavy -->
+<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+  <defs>
+    <filter id="rough3" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence baseFrequency="0.04" numOctaves="2" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.8"/>
+    </filter>
+  </defs>
+
+  <path d="
+    M 30,25 Q 20,10 10,20 Q 15,30 25,25 Q 35,20 45,25
+    Q 60,20 80,25 Q 100,20 120,25 Q 140,20 160,25
+    Q 180,20 200,25 Q 220,20 240,25 Q 260,20 280,25
+    Q 300,20 320,25 Q 340,20 360,25 Q 370,30 380,25
+    Q 390,20 385,10 Q 375,15 365,25 L 370,35
+    Q 375,50 370,70 Q 375,100 370,130 Q 375,160 370,190
+    Q 375,220 370,250 L 365,270 Q 375,285 385,280
+    Q 390,270 380,260 Q 370,265 360,270 Q 340,275 320,270
+    Q 300,275 280,270 Q 260,275 240,270 Q 220,275 200,270
+    Q 180,275 160,270 Q 140,275 120,270 Q 100,275 80,270
+    Q 60,275 45,270 Q 35,275 25,270 Q 15,265 10,275
+    Q 5,285 15,280 Q 25,285 30,270 L 25,250
+    Q 20,220 25,190 Q 20,160 25,130 Q 20,100 25,70
+    Q 20,50 25,35 L 30,25
+    Z
+    M 45,40 L 355,40 L 355,260 L 45,260 Z
+  "
+  fill="white"
+  fill-rule="evenodd"
+  stroke="black"
+  stroke-width="2"
+  filter="url(#rough3)"/>
+
+  <g stroke="black" stroke-width="1" fill="none" opacity="0.4">
+    <path d="M 30,30 Q 25,25 20,30 Q 25,35 30,30" filter="url(#rough3)"/>
+    <path d="M 370,30 Q 375,25 380,30 Q 375,35 370,30" filter="url(#rough3)"/>
+    <path d="M 30,270 Q 25,275 20,270 Q 25,265 30,270" filter="url(#rough3)"/>
+    <path d="M 370,270 Q 375,275 380,270 Q 375,265 370,270" filter="url(#rough3)"/>
+  </g>
+</svg> 
