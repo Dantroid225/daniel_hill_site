@@ -1,6 +1,15 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import testHallImage from '@/assets/test_hall.png';
+
+interface ArtCard {
+  id: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  opacity: number;
+}
 
 const ArtShowPage: React.FC = () => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -11,6 +20,125 @@ const ArtShowPage: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStartX, setDragStartX] = useState(0);
   const [dragStartScrollLeft, setDragStartScrollLeft] = useState(0);
+  const [artCards, setArtCards] = useState<ArtCard[]>([]);
+  const [lastCardX, setLastCardX] = useState(100); // Starting position
+  const [containerHeight, setContainerHeight] = useState(800);
+
+  // Generate a new art card with random positioning
+  const generateArtCard = useCallback(() => {
+    const cardWidth = Math.random() * 250 + 200; // 200-450px width (larger on average)
+    const cardHeight = Math.random() * 250 + 200; // 200-450px height (larger on average)
+
+    // Ensure minimum spacing between cards (50% more spacing)
+    const minSpacing = 150; // Increased from 100
+    const maxSpacing = 450; // Increased from 300
+    const spacing = Math.random() * (maxSpacing - minSpacing) + minSpacing;
+
+    // Ensure the new card doesn't overlap with the previous card
+    const newX = lastCardX + spacing;
+
+    // Random vertical position, ensuring the entire card is above the bottom 25% of container height
+    const minY = containerHeight * 0.02; // Start from 2% of height (closer to ceiling)
+    const maxY = containerHeight * 0.75 - cardHeight; // Ensure entire card fits above bottom 25%
+    const newY = Math.max(minY, Math.random() * (maxY - minY) + minY);
+
+    // Random opacity for variety
+    const opacity = Math.random() * 0.3 + 0.7; // 0.7-1.0 opacity
+
+    const newCard: ArtCard = {
+      id: Date.now() + Math.random(),
+      x: newX,
+      y: newY,
+      width: cardWidth,
+      height: cardHeight,
+      opacity: opacity,
+    };
+
+    // Update lastCardX to the end position of this card (x + width)
+    setLastCardX(newX + cardWidth);
+    return newCard;
+  }, [lastCardX, containerHeight]);
+
+  // Check if a new card should be generated based on scroll position
+  const checkAndGenerateCard = useCallback(
+    (scrollLeft: number) => {
+      const container = scrollContainerRef.current;
+      if (!container) return;
+
+      const containerRect = container.getBoundingClientRect();
+      const scrollRight = scrollLeft + containerRect.width;
+
+      // Generate a new card if we're approaching the end of existing cards
+      if (scrollRight > lastCardX - 300) {
+        const newCard = generateArtCard();
+        setArtCards(prev => [...prev, newCard]);
+      }
+    },
+    [generateArtCard, lastCardX]
+  );
+
+  // Initialize container dimensions and first few cards
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const updateDimensions = () => {
+      setContainerHeight(800); // Fixed height for the art gallery
+    };
+
+    updateDimensions();
+    window.addEventListener('resize', updateDimensions);
+
+    // Generate initial art cards
+    const initialCards: ArtCard[] = [];
+    let currentX = 100;
+
+    for (let i = 0; i < 5; i++) {
+      const cardWidth = Math.random() * 250 + 200; // 200-450px width (larger on average)
+      const cardHeight = Math.random() * 250 + 200; // 200-450px height (larger on average)
+      const spacing = Math.random() * 300 + 150; // 150-450px spacing (50% more)
+
+      const newX = currentX + spacing;
+      const minY = 800 * 0.02; // Start from 2% of height (closer to ceiling)
+      const maxY = 800 * 0.75 - cardHeight; // Ensure entire card fits above bottom 25%
+      const newY = Math.max(minY, Math.random() * (maxY - minY) + minY);
+
+      initialCards.push({
+        id: Date.now() + Math.random() + i,
+        x: newX,
+        y: newY,
+        width: cardWidth,
+        height: cardHeight,
+        opacity: Math.random() * 0.3 + 0.7,
+      });
+
+      currentX = newX + cardWidth; // Update to the end position of this card
+    }
+
+    setArtCards(initialCards);
+    setLastCardX(currentX);
+
+    return () => {
+      window.removeEventListener('resize', updateDimensions);
+    };
+  }, []);
+
+  // Monitor scroll position and generate new cards
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const scrollLeft = container.scrollLeft;
+      checkAndGenerateCard(scrollLeft);
+    };
+
+    container.addEventListener('scroll', handleScroll);
+
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+    };
+  }, [checkAndGenerateCard]);
 
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -192,7 +320,7 @@ const ArtShowPage: React.FC = () => {
       </div>
 
       {/* Museum Hallway Section - Horizontal Scrolling with Background */}
-      <div className='w-full bg-gradient-to-b from-background to-secondary/10'>
+      <div className='w-full bg-white'>
         <div className='relative overflow-hidden'>
           {/* Inset effect - top shadow */}
           <div className='absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-black/10 to-transparent z-10'></div>
@@ -208,7 +336,7 @@ const ArtShowPage: React.FC = () => {
               style={{ scrollBehavior: 'smooth' }}
             >
               <div
-                className='min-w-max'
+                className='relative min-w-max'
                 style={{
                   backgroundImage: `url(${testHallImage})`,
                   backgroundRepeat: 'repeat-x',
@@ -218,7 +346,23 @@ const ArtShowPage: React.FC = () => {
                   height: '800px', // Much taller for art images
                 }}
               >
-                {/* Content can be added here if needed */}
+                {/* Dynamic Art Cards */}
+                {artCards.map(card => (
+                  <motion.div
+                    key={card.id}
+                    className='absolute bg-red-500 rounded-lg shadow-lg'
+                    style={{
+                      left: `${card.x}px`,
+                      top: `${card.y}px`,
+                      width: `${card.width}px`,
+                      height: `${card.height}px`,
+                      opacity: card.opacity,
+                    }}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: card.opacity, scale: 1 }}
+                    transition={{ duration: 0.5, ease: 'easeOut' }}
+                  />
+                ))}
               </div>
             </div>
           </div>

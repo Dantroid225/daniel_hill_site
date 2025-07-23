@@ -1,10 +1,6 @@
 const { pool } = require('../config/database');
 const { sendResponse } = require('../utils/responseHelper');
-const {
-  validatePortfolioItem,
-  sanitizeInput,
-  validateFileUpload,
-} = require('../utils/validation');
+const { validateFileUpload } = require('../utils/validation');
 const fs = require('fs');
 const path = require('path');
 
@@ -233,7 +229,7 @@ const portfolioController = {
         image_url = `/uploads/images/${req.file.filename}`;
       }
 
-      const [result] = await pool.execute(
+      await pool.execute(
         'UPDATE portfolio_items SET title = ?, description = ?, image_url = ?, project_url = ?, technologies = ?, category = ?, status = ?, featured = ?, updated_at = NOW() WHERE id = ?',
         [
           title,
@@ -278,10 +274,7 @@ const portfolioController = {
       // Archive image file if it exists
       archiveImage(item[0].image_url);
 
-      const [result] = await pool.execute(
-        'DELETE FROM portfolio_items WHERE id = ?',
-        [id]
-      );
+      await pool.execute('DELETE FROM portfolio_items WHERE id = ?', [id]);
 
       return sendResponse(
         res,
