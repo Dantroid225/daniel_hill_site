@@ -1,6 +1,37 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { portfolioApi } from '@/services/api';
+import { portfolioApi } from '../../services/api';
+
+// Import all frame variations
+import frame1 from '../../assets/frame/frame-variation-1-bubbly.svg';
+import frame2 from '../../assets/frame/frame-variation-2-spiky.svg';
+import frame3 from '../../assets/frame/frame-variation-3-wavy.svg';
+import frame4 from '../../assets/frame/frame-variation-4-chunky.svg';
+import frame5 from '../../assets/frame/frame-variation-5-curly.svg';
+import frame6 from '../../assets/frame/frame-variation-6-torn.svg';
+import frame7 from '../../assets/frame/frame-variation-7-simple.svg';
+import frame8 from '../../assets/frame/frame-variation-8-angular.svg';
+import frame9 from '../../assets/frame/frame-variation-9-flowing.svg';
+import frame10 from '../../assets/frame/frame-variation-10-rough.svg';
+
+// Array of all available frames
+const frameVariations = [
+  frame1,
+  frame2,
+  frame3,
+  frame4,
+  frame5,
+  frame6,
+  frame7,
+  frame8,
+  frame9,
+  frame10,
+];
+
+// Function to get a random frame
+const getRandomFrame = () => {
+  return frameVariations[Math.floor(Math.random() * frameVariations.length)];
+};
 
 interface ArtProject {
   id: number;
@@ -27,6 +58,7 @@ interface ArtCard {
   projectId?: number;
   title?: string;
   isLoading?: boolean;
+  frameUrl?: string;
 }
 
 const ArtShowPage: React.FC = () => {
@@ -45,14 +77,16 @@ const ArtShowPage: React.FC = () => {
   const [isLoadingArtData, setIsLoadingArtData] = useState(false);
   const [artDataLoaded, setArtDataLoaded] = useState(false);
 
-  // Batch generation management
+  // Card management - simplified approach with 20 card batches
   const [visibleCards, setVisibleCards] = useState<ArtCard[]>([]);
   const [allGeneratedCards, setAllGeneratedCards] = useState<ArtCard[]>([]);
   const [isGeneratingBatch, setIsGeneratingBatch] = useState(false);
-  const [lastGeneratedX, setLastGeneratedX] = useState(100);
-  const hasGeneratedInitialBatchRef = useRef(false);
+  const [lastGeneratedX, setLastGeneratedX] = useState(200);
   const lastGenerationTimeRef = useRef(0);
-  const hasUpdatedInitialCardsRef = useRef(false);
+  const hasGeneratedInitialBatchRef = useRef(false);
+  const isThrottledRef = useRef(false);
+  const throttleTimeoutRef = useRef<number | null>(null);
+  const hasUpdatedArtDataRef = useRef(false);
 
   // Load art projects data (non-blocking)
   const loadArtProjects = useCallback(async () => {
@@ -118,10 +152,16 @@ const ArtShowPage: React.FC = () => {
     return project;
   }, [artProjects]);
 
-  // Generate a batch of cards (5-8 cards at a time)
+  // Generate a batch of 20 cards
   const generateCardBatch = useCallback(() => {
     if (isGeneratingBatch) {
       console.log('🚫 Batch generation already in progress, skipping...');
+      return;
+    }
+
+    // Throttle check - prevent multiple calls within 2 seconds
+    if (isThrottledRef.current) {
+      console.log('🚫 Throttled: batch generation blocked');
       return;
     }
 
@@ -133,8 +173,22 @@ const ArtShowPage: React.FC = () => {
       hasGeneratedInitialBatchRef.current
     );
 
+    // Set throttle flag
+    isThrottledRef.current = true;
+
+    // Clear any existing throttle timeout
+    if (throttleTimeoutRef.current) {
+      clearTimeout(throttleTimeoutRef.current);
+    }
+
+    // Set throttle timeout for 2 seconds
+    throttleTimeoutRef.current = window.setTimeout(() => {
+      isThrottledRef.current = false;
+      throttleTimeoutRef.current = null;
+    }, 2000);
+
     setIsGeneratingBatch(true);
-    const batchSize = Math.floor(Math.random() * 4) + 5; // 5-8 cards
+    const batchSize = 20; // Fixed batch size of 20 cards
     const newCards: ArtCard[] = [];
     let currentX = lastGeneratedX;
 
@@ -153,48 +207,67 @@ const ArtShowPage: React.FC = () => {
       currentX = 200;
     }
 
+    // Create a combined array of all cards to check against (existing + current batch)
+    const allCardsToCheck = [...allGeneratedCards];
+
     for (let i = 0; i < batchSize; i++) {
-      // Use placeholder dimensions initially - will be updated when art data is loaded
-      const placeholderAspectRatio = 1.33; // Default aspect ratio
-      const maxWidth = 400;
-      const maxHeight = 500;
-      const minWidth = 200;
+      // Simple placeholder dimensions - will be updated when art loads
+      const cardWidth = 300;
+      const cardHeight = 200;
 
-      let cardWidth, cardHeight;
+      // Try multiple positions to find a non-overlapping spot
+      let attempts = 0;
+      const maxAttempts = 15;
+      let newX: number = 0;
+      let newY: number = 0;
+      let positionFound = false;
 
-      // Use placeholder dimensions that will be updated later
-      cardWidth = Math.random() * (maxWidth - minWidth) + minWidth;
-      cardHeight = cardWidth / placeholderAspectRatio;
-      if (cardHeight > maxHeight) {
-        cardHeight = maxHeight;
-        cardWidth = cardHeight * placeholderAspectRatio;
+      while (attempts < maxAttempts && !positionFound) {
+        attempts++;
+
+        // Start with reasonable spacing and increase if needed
+        const baseSpacing = 350; // Increased from 300
+        const spacing = baseSpacing + attempts * 20; // Increase spacing with each attempt
+        newX = currentX + spacing;
+
+        // Calculate Y position with more conservative bounds
+        const minY = 50;
+        const maxY = containerHeight * 0.7 - cardHeight;
+        newY = Math.max(minY, Math.random() * (maxY - minY) + minY);
+
+        // Check if this position would overlap with any cards (existing + current batch)
+        const wouldOverlap = allCardsToCheck.some(existingCard => {
+          const existingEndX = existingCard.x + existingCard.width;
+          const newEndX = newX + cardWidth;
+          const existingEndY = existingCard.y + existingCard.height;
+          const newEndY = newY + cardHeight;
+
+          // Check for overlap on both X and Y axes with some buffer
+          const xOverlap = !(
+            newEndX + 20 < existingCard.x || newX > existingEndX + 20
+          );
+          const yOverlap = !(
+            newEndY + 20 < existingCard.y || newY > existingEndY + 20
+          );
+
+          return xOverlap && yOverlap;
+        });
+
+        if (!wouldOverlap) {
+          positionFound = true;
+        }
       }
 
-      // Ensure proper spacing between cards (150-450px spacing)
-      const spacing = Math.random() * 300 + 150;
-      const newX = currentX + spacing;
-
-      // Check if this position would overlap with any existing cards (not cards in this batch)
-      const wouldOverlap = allGeneratedCards.some(existingCard => {
-        const existingEnd = existingCard.x + existingCard.width;
-        const newEnd = newX + cardWidth;
-        return !(newEnd < existingCard.x || newX > existingEnd);
-      });
-
-      if (wouldOverlap) {
+      if (!positionFound) {
         console.warn(
-          `⚠️ Card ${
+          `⚠️ Could not find non-overlapping position for card ${
             i + 1
-          } would overlap with existing card at x=${newX}, moving further right...`
+          } after ${maxAttempts} attempts, using fallback position...`
         );
-        // Move the card further to the right to avoid overlap
-        currentX = newX + cardWidth + 100; // Add extra spacing
-        continue;
+        // Fallback: just move far to the right
+        newX = currentX + 500;
+        newY = Math.random() * (containerHeight * 0.6) + 50;
       }
-
-      const minY = containerHeight * 0.02;
-      const maxY = containerHeight * 0.75 - cardHeight;
-      const newY = Math.max(minY, Math.random() * (maxY - minY) + minY);
 
       const cardId = Date.now() + Math.random() + i;
       const newCard = {
@@ -204,23 +277,19 @@ const ArtShowPage: React.FC = () => {
         width: cardWidth,
         height: cardHeight,
         opacity: Math.random() * 0.3 + 0.7,
-        aspectRatio: placeholderAspectRatio,
+        aspectRatio: 1.5,
         isLoading: true,
+        frameUrl: getRandomFrame(),
       };
 
       newCards.push(newCard);
 
-      // Update currentX to the end position of this card (x + width) for next iteration
+      // Update currentX to the end position of this card for next iteration
       currentX = newX + cardWidth;
-      console.log(
-        `🎨 Card ${
-          i + 1
-        }: x=${newX}, width=${cardWidth}, end=${currentX}, spacing=${spacing}`
-      );
     }
 
     console.log(
-      `📦 Generated batch of ${batchSize} cards. Last card ends at: ${currentX}`
+      `📦 Generated batch of ${batchSize} cards (20-card batch). Last card ends at: ${currentX}`
     );
     console.log(
       '🎨 New cards positions:',
@@ -256,32 +325,30 @@ const ArtShowPage: React.FC = () => {
                   const dimensions = await getImageDimensions(project.imageUrl);
                   const imageAspectRatio = dimensions.width / dimensions.height;
 
-                  // Recalculate card dimensions based on actual image proportions
-                  const maxWidth = 400;
-                  const maxHeight = 500;
-                  const minWidth = 200;
-                  const minHeight = 150;
-
+                  // Scale the card to match the image's aspect ratio
+                  // This ensures the frame SVG (blue box) is proportional to the art image
+                  const baseSize = 300;
                   let cardWidth, cardHeight;
 
                   if (imageAspectRatio >= 1) {
-                    // Landscape or square image
-                    cardWidth =
-                      Math.random() * (maxWidth - minWidth) + minWidth;
-                    cardHeight = cardWidth / imageAspectRatio;
-                    if (cardHeight > maxHeight) {
-                      cardHeight = maxHeight;
-                      cardWidth = cardHeight * imageAspectRatio;
-                    }
+                    // Landscape image - use width as base
+                    cardWidth = baseSize;
+                    cardHeight = baseSize / imageAspectRatio;
                   } else {
-                    // Portrait image
-                    cardHeight =
-                      Math.random() * (maxHeight - minHeight) + minHeight;
-                    cardWidth = cardHeight * imageAspectRatio;
-                    if (cardWidth > maxWidth) {
-                      cardWidth = maxWidth;
-                      cardHeight = cardWidth / imageAspectRatio;
-                    }
+                    // Portrait image - use height as base
+                    cardHeight = baseSize;
+                    cardWidth = baseSize * imageAspectRatio;
+                  }
+
+                  // Ensure minimum size
+                  const minSize = 200;
+                  if (cardWidth < minSize) {
+                    cardWidth = minSize;
+                    cardHeight = minSize / imageAspectRatio;
+                  }
+                  if (cardHeight < minSize) {
+                    cardHeight = minSize;
+                    cardWidth = minSize * imageAspectRatio;
                   }
 
                   console.log(
@@ -322,7 +389,6 @@ const ArtShowPage: React.FC = () => {
     artDataLoaded,
     artProjects,
     getRandomArtProject,
-    allGeneratedCards, // Added this dependency
   ]);
 
   // Calculate which cards should be visible based on scroll position
@@ -339,16 +405,38 @@ const ArtShowPage: React.FC = () => {
     const visibleStart = currentScrollLeft - bufferWidth;
     const visibleEnd = currentScrollLeft + currentViewportWidth + bufferWidth;
 
-    const visible = allGeneratedCards.filter(
-      card => card.x >= visibleStart && card.x <= visibleEnd
-    );
+    // Get current cards and calculate visible ones
+    setAllGeneratedCards(prevCards => {
+      const visible = prevCards.filter(
+        card => card.x >= visibleStart && card.x <= visibleEnd
+      );
 
-    // More aggressive cleanup: remove cards that are more than 5 viewport widths behind (reduced from 10)
+      console.log(
+        '👁️ Setting visible cards:',
+        visible.length,
+        'out of',
+        prevCards.length
+      );
+      setVisibleCards(visible);
+      return prevCards;
+    });
+  }, []); // No dependencies needed since we use functional state updates
+
+  // Clean up old cards that are far behind the current scroll position
+  const cleanupOldCards = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const rect = container.getBoundingClientRect();
+    const currentScrollLeft = container.scrollLeft;
+    const currentViewportWidth = rect.width;
+
+    // Remove cards that are more than 5 viewport widths behind
     const cleanupThreshold = currentScrollLeft - currentViewportWidth * 5;
     if (cleanupThreshold > 0) {
-      const beforeCleanup = allGeneratedCards.length;
-      setAllGeneratedCards(prev => {
-        const filtered = prev.filter(card => card.x >= cleanupThreshold);
+      setAllGeneratedCards(prevCards => {
+        const beforeCleanup = prevCards.length;
+        const filtered = prevCards.filter(card => card.x >= cleanupThreshold);
         if (filtered.length < beforeCleanup) {
           console.log(
             `🧹 Cleaned up ${beforeCleanup - filtered.length} old cards`
@@ -357,29 +445,18 @@ const ArtShowPage: React.FC = () => {
         return filtered;
       });
     }
+  }, []); // No dependencies needed since we use functional state updates
 
-    setVisibleCards(visible);
-  }, [allGeneratedCards]);
-
-  // Check if we need to generate more cards
+  // Check if we need to generate more cards when user reaches the end
   const checkAndGenerateMoreCards = useCallback(() => {
     const container = scrollContainerRef.current;
     if (!container || isGeneratingBatch) return;
-
-    // Throttle card generation to prevent too frequent calls
-    const now = Date.now();
-    const timeSinceLastGeneration = now - lastGenerationTimeRef.current;
-    if (timeSinceLastGeneration < 1000) {
-      // Minimum 1 second between generations
-      return;
-    }
 
     const rect = container.getBoundingClientRect();
     const scrollRight = container.scrollLeft + rect.width;
 
     // Safety check: if lastGeneratedX is unreasonably large, reset it more conservatively
     if (lastGeneratedX > 5000) {
-      // Reduced from 10000 to 5000
       console.warn(
         '⚠️ Position reset: lastGeneratedX was too large, resetting to current scroll position'
       );
@@ -389,19 +466,19 @@ const ArtShowPage: React.FC = () => {
       return;
     }
 
-    // Generate more cards if we're approaching the end (within 2 viewport widths instead of 3)
-    if (scrollRight > lastGeneratedX - rect.width * 2) {
-      console.log('🚀 Triggering batch generation...');
+    // Generate more cards only when user has reached the end (within 1 viewport width)
+    if (scrollRight > lastGeneratedX - rect.width) {
+      console.log('🚀 User reached end - triggering batch generation...');
       console.log('📍 Scroll position:', container.scrollLeft);
       console.log('📍 Scroll right edge:', scrollRight);
       console.log('📍 Last generated X:', lastGeneratedX);
-      console.log('📍 Threshold:', lastGeneratedX - rect.width * 2);
-      lastGenerationTimeRef.current = now; // Update last generation time
+      console.log('📍 Threshold:', lastGeneratedX - rect.width);
+      lastGenerationTimeRef.current = Date.now(); // Update last generation time
       generateCardBatch();
     }
   }, [lastGeneratedX, isGeneratingBatch, generateCardBatch]);
 
-  // Initialize container dimensions and first batch of cards
+  // Initialize container dimensions
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
@@ -413,116 +490,135 @@ const ArtShowPage: React.FC = () => {
     updateDimensions();
     window.addEventListener('resize', updateDimensions);
 
-    // Generate initial batch of cards only once
+    return () => {
+      window.removeEventListener('resize', updateDimensions);
+      // Clean up throttle timeout on unmount
+      if (throttleTimeoutRef.current) {
+        clearTimeout(throttleTimeoutRef.current);
+      }
+    };
+  }, []); // Remove dependencies to prevent re-runs
+
+  // Generate initial batch of cards only once
+  useEffect(() => {
     if (!hasGeneratedInitialBatchRef.current) {
       console.log('🎬 Initial batch generation triggered');
       generateCardBatch();
       hasGeneratedInitialBatchRef.current = true;
-    }
 
-    return () => {
-      window.removeEventListener('resize', updateDimensions);
-    };
-  }, [generateCardBatch]);
+      // Update visible cards after initial generation
+      setTimeout(() => {
+        updateVisibleCards();
+      }, 100);
+    }
+  }, []); // Empty dependency array - only run once on mount
 
   // Load art data on component mount (non-blocking)
   useEffect(() => {
     loadArtProjects();
   }, [loadArtProjects]);
 
+  // Update visible cards whenever allGeneratedCards changes
+  useEffect(() => {
+    if (allGeneratedCards.length > 0) {
+      console.log(
+        '🔄 Updating visible cards, total cards:',
+        allGeneratedCards.length
+      );
+      updateVisibleCards();
+    }
+  }, [allGeneratedCards]); // Remove updateVisibleCards from dependencies
+
   // Update existing cards with art data when it becomes available
   useEffect(() => {
     if (
       artDataLoaded &&
       artProjects.length > 0 &&
-      !hasUpdatedInitialCardsRef.current
+      !hasUpdatedArtDataRef.current
     ) {
       console.log('🔄 Updating existing cards with art data...');
+      hasUpdatedArtDataRef.current = true;
 
       // Small delay to ensure art data is fully processed
       setTimeout(async () => {
-        const updatedCards = await Promise.all(
-          allGeneratedCards.map(async card => {
-            if (card.isLoading) {
-              const project = getRandomArtProject();
-              if (project) {
-                console.log(
-                  '🎨 Updating existing card',
-                  card.id,
-                  'with project:',
-                  project.title
-                );
+        setAllGeneratedCards(prevCards => {
+          Promise.all(
+            prevCards.map(async card => {
+              if (card.isLoading) {
+                const project = getRandomArtProject();
+                if (project) {
+                  console.log(
+                    '🎨 Updating existing card',
+                    card.id,
+                    'with project:',
+                    project.title
+                  );
 
-                // Get actual image dimensions
-                const dimensions = await getImageDimensions(project.imageUrl);
-                const imageAspectRatio = dimensions.width / dimensions.height;
+                  // Get actual image dimensions
+                  const dimensions = await getImageDimensions(project.imageUrl);
+                  const imageAspectRatio = dimensions.width / dimensions.height;
 
-                // Recalculate card dimensions based on actual image proportions
-                const maxWidth = 400;
-                const maxHeight = 500;
-                const minWidth = 200;
-                const minHeight = 150;
+                  // Scale the card to match the image's aspect ratio
+                  // This ensures the frame SVG (blue box) is proportional to the art image
+                  const baseSize = 300;
+                  let cardWidth, cardHeight;
 
-                let cardWidth, cardHeight;
-
-                if (imageAspectRatio >= 1) {
-                  // Landscape or square image
-                  cardWidth = Math.random() * (maxWidth - minWidth) + minWidth;
-                  cardHeight = cardWidth / imageAspectRatio;
-                  if (cardHeight > maxHeight) {
-                    cardHeight = maxHeight;
-                    cardWidth = cardHeight * imageAspectRatio;
+                  if (imageAspectRatio >= 1) {
+                    // Landscape image - use width as base
+                    cardWidth = baseSize;
+                    cardHeight = baseSize / imageAspectRatio;
+                  } else {
+                    // Portrait image - use height as base
+                    cardHeight = baseSize;
+                    cardWidth = baseSize * imageAspectRatio;
                   }
-                } else {
-                  // Portrait image
-                  cardHeight =
-                    Math.random() * (maxHeight - minHeight) + minHeight;
-                  cardWidth = cardHeight * imageAspectRatio;
-                  if (cardWidth > maxWidth) {
-                    cardWidth = maxWidth;
-                    cardHeight = cardWidth / imageAspectRatio;
+
+                  // Ensure minimum size
+                  const minSize = 200;
+                  if (cardWidth < minSize) {
+                    cardWidth = minSize;
+                    cardHeight = minSize / imageAspectRatio;
                   }
+                  if (cardHeight < minSize) {
+                    cardHeight = minSize;
+                    cardWidth = minSize * imageAspectRatio;
+                  }
+
+                  console.log(
+                    `🎨 Existing Card ${card.id} - Image: ${dimensions.width}x${
+                      dimensions.height
+                    }, Aspect: ${imageAspectRatio.toFixed(
+                      2
+                    )}, Card: ${cardWidth.toFixed(0)}x${cardHeight.toFixed(0)}`
+                  );
+
+                  return {
+                    ...card,
+                    width: cardWidth,
+                    height: cardHeight,
+                    aspectRatio: imageAspectRatio,
+                    imageUrl: project.imageUrl,
+                    projectId: project.id,
+                    title: project.title,
+                    isLoading: false,
+                  };
                 }
-
-                console.log(
-                  `🎨 Existing Card ${card.id} - Image: ${dimensions.width}x${
-                    dimensions.height
-                  }, Aspect: ${imageAspectRatio.toFixed(
-                    2
-                  )}, Card: ${cardWidth.toFixed(0)}x${cardHeight.toFixed(0)}`
-                );
-
-                return {
-                  ...card,
-                  width: cardWidth,
-                  height: cardHeight,
-                  aspectRatio: imageAspectRatio,
-                  imageUrl: project.imageUrl,
-                  projectId: project.id,
-                  title: project.title,
-                  isLoading: false,
-                };
               }
-            }
-            return card;
-          })
-        );
+              return card;
+            })
+          ).then(updatedCards => {
+            const updatedCount = updatedCards.filter(
+              card => !card.isLoading
+            ).length;
+            console.log(`✅ Updated ${updatedCount} cards with art data`);
+            setAllGeneratedCards(updatedCards);
+          });
 
-        const updatedCount = updatedCards.filter(
-          card => !card.isLoading
-        ).length;
-        console.log(`✅ Updated ${updatedCount} cards with art data`);
-        hasUpdatedInitialCardsRef.current = true; // Mark as updated
-        setAllGeneratedCards(updatedCards);
+          return prevCards; // Return current state while async operation is in progress
+        });
       }, 100); // Small delay to ensure art data is ready
     }
-  }, [
-    artDataLoaded,
-    artProjects,
-    getRandomArtProject,
-    getImageDimensions,
-    allGeneratedCards,
-  ]);
+  }, [artDataLoaded, artProjects, getRandomArtProject, getImageDimensions]);
 
   // Monitor scroll position and generate new cards
   useEffect(() => {
@@ -540,6 +636,7 @@ const ArtShowPage: React.FC = () => {
       scrollTimeout = setTimeout(() => {
         // Always update visible cards and check for more cards
         updateVisibleCards();
+        cleanupOldCards(); // Clean up old cards
         checkAndGenerateMoreCards(); // Check for more cards to generate
       }, 32); // Increased to 32ms for smoother experience
     };
@@ -552,7 +649,7 @@ const ArtShowPage: React.FC = () => {
         clearTimeout(scrollTimeout);
       }
     };
-  }, [checkAndGenerateMoreCards, updateVisibleCards]);
+  }, []); // Empty dependency array - functions are stable
 
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -732,6 +829,23 @@ const ArtShowPage: React.FC = () => {
 
   return (
     <div className='min-h-screen pt-20'>
+      {/* Global SVG Definitions for Clip Paths */}
+      <svg
+        style={{
+          position: 'absolute',
+          width: 0,
+          height: 0,
+          overflow: 'hidden',
+        }}
+      >
+        <defs>
+          {/* Base clip path for 400x300 frame (original SVG viewBox) */}
+          <clipPath id='frame-clip-base'>
+            <rect x='35' y='35' width='330' height='230' />
+          </clipPath>
+        </defs>
+      </svg>
+
       {/* Header Section */}
       <div className='container mx-auto px-4 py-12'>
         <motion.div
@@ -788,136 +902,43 @@ const ArtShowPage: React.FC = () => {
                     animate={{ opacity: card.opacity, scale: 1 }}
                     transition={{ duration: 0.5, ease: 'easeOut' }}
                   >
-                    {/* SVG Frame with Art Image Mask */}
-                    <svg
-                      viewBox='0 0 400 300'
-                      xmlns='http://www.w3.org/2000/svg'
-                      preserveAspectRatio='none'
-                      className='w-full h-full'
-                    >
-                      <defs>
-                        <filter
-                          id={`rough-${card.id}`}
-                          x='-20%'
-                          y='-20%'
-                          width='140%'
-                          height='140%'
-                        >
-                          <feTurbulence
-                            baseFrequency='0.04'
-                            numOctaves='2'
-                            result='noise'
-                          />
-                          <feDisplacementMap
-                            in='SourceGraphic'
-                            in2='noise'
-                            scale='1.8'
-                          />
-                        </filter>
-                        {card.imageUrl && !card.isLoading && (
-                          <clipPath id={`frame-clip-${card.id}`}>
-                            <path
-                              d='
-                                 M 30,25 Q 20,10 10,20 Q 15,30 25,25 Q 35,20 45,25
-                                 Q 60,20 80,25 Q 100,20 120,25 Q 140,20 160,25
-                                 Q 180,20 200,25 Q 220,20 240,25 Q 260,20 280,25
-                                 Q 300,20 320,25 Q 340,20 360,25 Q 370,30 380,25
-                                 Q 390,20 385,10 Q 375,15 365,25 L 370,35
-                                 Q 375,50 370,70 Q 375,100 370,130 Q 375,160 370,190
-                                 Q 375,220 370,250 L 365,270 Q 375,285 385,280
-                                 Q 390,270 380,260 Q 370,265 360,270 Q 340,275 320,270
-                                 Q 300,275 280,270 Q 260,275 240,270 Q 220,275 200,270
-                                 Q 180,275 160,270 Q 140,275 120,270 Q 100,275 80,270
-                                 Q 60,275 45,270 Q 35,275 25,270 Q 15,265 10,275
-                                 Q 5,285 15,280 Q 25,285 30,270 L 25,250
-                                 Q 20,220 25,190 Q 20,160 25,130 Q 20,100 25,70
-                                 Q 20,50 25,35 L 30,25
-                                 Z
-                                 M 65,60 L 335,60 L 335,240 L 65,240 Z
-                               '
-                            />
-                          </clipPath>
-                        )}
-                      </defs>
-
-                      {/* Art Image with Frame Mask */}
+                    {/* External Frame SVG with Art Image */}
+                    <div className='relative w-full h-full'>
+                      {/* Art Image Background - Scaled to fill frame's transparent center */}
                       {card.imageUrl && !card.isLoading && (
-                        <image
-                          href={card.imageUrl}
-                          x='0'
-                          y='0'
-                          width='400'
-                          height='300'
-                          preserveAspectRatio='xMidYMid slice'
-                          clipPath={`url(#frame-clip-${card.id})`}
-                        />
+                        <div
+                          className='absolute'
+                          style={{
+                            left: '8.75%', // 35/400 = 8.75%
+                            top: '11.67%', // 35/300 = 11.67%
+                            width: '82.5%', // 330/400 = 82.5%
+                            height: '76.67%', // 230/300 = 76.67%
+                            overflow: 'hidden',
+                          }}
+                        >
+                          <img
+                            src={card.imageUrl}
+                            alt={card.title || 'Art piece'}
+                            className='w-full h-full object-cover'
+                          />
+                        </div>
                       )}
 
                       {/* Loading indicator or placeholder */}
                       {card.isLoading && (
-                        <rect
-                          x='0'
-                          y='0'
-                          width='400'
-                          height='300'
-                          fill='#e5e7eb'
-                          className='animate-pulse'
-                          clipPath={`url(#frame-clip-${card.id})`}
-                        />
+                        <div className='absolute inset-0 bg-gray-200 animate-pulse' />
                       )}
 
-                      {/* Frame with White Fill and Transparent Center */}
-                      <path
-                        d='
-                            M 30,25 Q 20,10 10,20 Q 15,30 25,25 Q 35,20 45,25
-                            Q 60,20 80,25 Q 100,20 120,25 Q 140,20 160,25
-                            Q 180,20 200,25 Q 220,20 240,25 Q 260,20 280,25
-                            Q 300,20 320,25 Q 340,20 360,25 Q 370,30 380,25
-                            Q 390,20 385,10 Q 375,15 365,25 L 370,35
-                            Q 375,50 370,70 Q 375,100 370,130 Q 375,160 370,190
-                            Q 375,220 370,250 L 365,270 Q 375,285 385,280
-                            Q 390,270 380,260 Q 370,265 360,270 Q 340,275 320,270
-                            Q 300,275 280,270 Q 260,275 240,270 Q 220,275 200,270
-                            Q 180,275 160,270 Q 140,275 120,270 Q 100,275 80,270
-                            Q 60,275 45,270 Q 35,275 25,270 Q 15,265 10,275
-                            Q 5,285 15,280 Q 25,285 30,270 L 25,250
-                            Q 20,220 25,190 Q 20,160 25,130 Q 20,100 25,70
-                            Q 20,50 25,35 L 30,25
-                            Z
-                            M 45,40 L 355,40 L 355,260 L 45,260 Z
-                          '
-                        fill='white'
-                        fillRule='evenodd'
-                        stroke='black'
-                        strokeWidth='2'
-                        filter={`url(#rough-${card.id})`}
+                      {/* External Frame SVG */}
+                      <img
+                        src={card.frameUrl}
+                        alt='Frame'
+                        className='absolute inset-0 w-full h-full'
+                        style={{
+                          filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1))',
+                        }}
                       />
-
-                      {/* Decorative corner elements */}
-                      <g
-                        stroke='black'
-                        strokeWidth='1'
-                        fill='none'
-                        opacity='0.4'
-                      >
-                        <path
-                          d='M 30,30 Q 25,25 20,30 Q 25,35 30,30'
-                          filter={`url(#rough-${card.id})`}
-                        />
-                        <path
-                          d='M 370,30 Q 375,25 380,30 Q 375,35 370,30'
-                          filter={`url(#rough-${card.id})`}
-                        />
-                        <path
-                          d='M 30,270 Q 25,275 20,270 Q 25,265 30,270'
-                          filter={`url(#rough-${card.id})`}
-                        />
-                        <path
-                          d='M 370,270 Q 375,275 380,270 Q 375,265 370,270'
-                          filter={`url(#rough-${card.id})`}
-                        />
-                      </g>
-                    </svg>
+                    </div>
                   </motion.div>
                 ))}
               </div>

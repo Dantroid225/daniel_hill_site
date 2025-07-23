@@ -131,6 +131,11 @@ const portfolioController = {
   // Create new portfolio item (admin)
   createItem: async (req, res) => {
     try {
+      console.log(
+        'Creating portfolio item with data:',
+        req.sanitizedData || req.body
+      );
+
       // Use sanitized data from validation middleware
       const {
         title,
@@ -161,13 +166,28 @@ const portfolioController = {
       );
       const display_order = orderResult[0].next_order;
 
+      // Convert undefined values to null for MySQL
+      const projectUrl = project_url || null;
+
+      console.log('About to execute INSERT with values:', {
+        title,
+        description,
+        image_url,
+        project_url: projectUrl,
+        technologies: JSON.stringify(technologies),
+        category,
+        display_order,
+        status,
+        featured,
+      });
+
       const [result] = await pool.execute(
         'INSERT INTO portfolio_items (title, description, image_url, project_url, technologies, category, display_order, status, featured) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [
           title,
           description,
           image_url,
-          project_url,
+          projectUrl,
           JSON.stringify(technologies),
           category,
           display_order,
@@ -185,6 +205,12 @@ const portfolioController = {
       );
     } catch (error) {
       console.error('Error creating portfolio item:', error);
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        sqlMessage: error.sqlMessage,
+        sqlState: error.sqlState,
+      });
       return sendResponse(res, 500, false, 'Failed to create portfolio item');
     }
   },

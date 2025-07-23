@@ -127,7 +127,7 @@ async function setupAdmin() {
 
     if (existingAdmins.length === 0) {
       // Create admin user with secure password
-      const adminPassword = "admin123"; // Default password - should be changed immediately
+      const adminPassword = "Admin123!"; // Default password - should be changed immediately
       const hashedPassword = await bcrypt.hash(adminPassword, 12);
 
       await connection.execute(
@@ -137,7 +137,7 @@ async function setupAdmin() {
 
       console.log("✅ Admin user created successfully!");
       console.log("📧 Email: admin@danielhill.dev");
-      console.log("🔑 Password: admin123");
+      console.log("🔑 Password: Admin123!");
       console.log(
         "⚠️  IMPORTANT: Change this password immediately after first login!"
       );

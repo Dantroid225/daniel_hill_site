@@ -92,7 +92,7 @@ const AdminLoginPage: React.FC = () => {
             <div className='mt-6 text-center text-sm text-muted-foreground'>
               <p>Default credentials:</p>
               <p>Email: admin@danielhill.dev</p>
-              <p>Password: admin123</p>
+              <p>Password: Admin123!</p>
               <p className='mt-2 text-xs'>
                 Please change these credentials after first login
               </p>
