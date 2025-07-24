@@ -1,5 +1,6 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import Layout from './components/layout/Layout';
 import HomePage from './pages/home/HomePage';
 import ExperiencePage from './pages/experience/ExperiencePage';
@@ -15,72 +16,74 @@ import { AdminAuthProvider } from './context/AdminAuthContext';
 
 function App() {
   return (
-    <ThemeProvider>
-      <AdminAuthProvider>
-        <Routes>
-          {/* Public routes */}
-          <Route
-            path='/'
-            element={
-              <Layout>
-                <HomePage />
-              </Layout>
-            }
-          />
-          <Route
-            path='/experience'
-            element={
-              <Layout>
-                <ExperiencePage />
-              </Layout>
-            }
-          />
-          <Route
-            path='/projects'
-            element={
-              <Layout>
-                <ProjectsPage />
-              </Layout>
-            }
-          />
-          <Route
-            path='/artshow'
-            element={
-              <Layout>
-                <ArtShowPage />
-              </Layout>
-            }
-          />
-          <Route
-            path='/contact'
-            element={
-              <Layout>
-                <ContactPage />
-              </Layout>
-            }
-          />
-          <Route
-            path='/blog'
-            element={
-              <Layout>
-                <BlogPage />
-              </Layout>
-            }
-          />
+    <HelmetProvider>
+      <ThemeProvider>
+        <AdminAuthProvider>
+          <Routes>
+            {/* Public routes */}
+            <Route
+              path='/'
+              element={
+                <Layout>
+                  <HomePage />
+                </Layout>
+              }
+            />
+            <Route
+              path='/experience'
+              element={
+                <Layout>
+                  <ExperiencePage />
+                </Layout>
+              }
+            />
+            <Route
+              path='/projects'
+              element={
+                <Layout>
+                  <ProjectsPage />
+                </Layout>
+              }
+            />
+            <Route
+              path='/artshow'
+              element={
+                <Layout>
+                  <ArtShowPage />
+                </Layout>
+              }
+            />
+            <Route
+              path='/contact'
+              element={
+                <Layout>
+                  <ContactPage />
+                </Layout>
+              }
+            />
+            <Route
+              path='/blog'
+              element={
+                <Layout>
+                  <BlogPage />
+                </Layout>
+              }
+            />
 
-          {/* Admin routes */}
-          <Route path='/admin/login' element={<AdminLoginPage />} />
-          <Route
-            path='/admin/*'
-            element={
-              <ProtectedAdminRoute>
-                <AdminDashboardPage />
-              </ProtectedAdminRoute>
-            }
-          />
-        </Routes>
-      </AdminAuthProvider>
-    </ThemeProvider>
+            {/* Admin routes */}
+            <Route path='/admin/login' element={<AdminLoginPage />} />
+            <Route
+              path='/admin/*'
+              element={
+                <ProtectedAdminRoute>
+                  <AdminDashboardPage />
+                </ProtectedAdminRoute>
+              }
+            />
+          </Routes>
+        </AdminAuthProvider>
+      </ThemeProvider>
+    </HelmetProvider>
   );
 }
 
