@@ -1,5 +1,5 @@
 resource "aws_security_group" "ec2" {
-  name_prefix = "${var.project_name}-ec2-"
+  name_prefix = "${var.project_name}-"
   vpc_id      = var.vpc_id
 
   ingress {
@@ -31,7 +31,7 @@ resource "aws_security_group" "ec2" {
   }
 
   tags = {
-    Name        = "${var.project_name}-ec2-sg"
+    Name        = "${var.project_name}-sg"
     Environment = var.environment
   }
 }
@@ -73,7 +73,7 @@ resource "aws_autoscaling_group" "main" {
   max_size           = 3
   min_size           = 1
   target_group_arns  = [aws_lb_target_group.main.arn]
-  vpc_zone_identifier = [var.subnet_id]
+  vpc_zone_identifier = var.subnet_ids
 
   launch_template {
     id      = aws_launch_template.main.id
@@ -92,7 +92,7 @@ resource "aws_lb" "main" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.ec2.id]
-  subnets           = [var.subnet_id]
+  subnets           = var.subnet_ids
 
   enable_deletion_protection = false
 

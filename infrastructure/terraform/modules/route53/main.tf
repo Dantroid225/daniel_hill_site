@@ -1,9 +1,17 @@
-data "aws_route53_zone" "main" {
+# Create a new hosted zone for the domain
+resource "aws_route53_zone" "main" {
   name = var.domain_name
+  
+  tags = {
+    Name        = "${var.project_name}-${var.environment}-zone"
+    Project     = var.project_name
+    Environment = var.environment
+  }
 }
 
+# A record for the root domain pointing to CloudFront
 resource "aws_route53_record" "main" {
-  zone_id = data.aws_route53_zone.main.zone_id
+  zone_id = aws_route53_zone.main.zone_id
   name    = var.domain_name
   type    = "A"
 
@@ -14,8 +22,9 @@ resource "aws_route53_record" "main" {
   }
 }
 
+# A record for www subdomain pointing to CloudFront
 resource "aws_route53_record" "www" {
-  zone_id = data.aws_route53_zone.main.zone_id
+  zone_id = aws_route53_zone.main.zone_id
   name    = "www.${var.domain_name}"
   type    = "A"
 
@@ -26,6 +35,12 @@ resource "aws_route53_record" "www" {
   }
 }
 
+# Outputs
 output "zone_id" {
-  value = data.aws_route53_zone.main.zone_id
+  value = aws_route53_zone.main.zone_id
+}
+
+output "name_servers" {
+  value = aws_route53_zone.main.name_servers
+  description = "Nameservers to configure at your domain registrar"
 } 

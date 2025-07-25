@@ -1,0 +1,125 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "iam:CreateRole",
+        "iam:DeleteRole",
+        "iam:GetRole",
+        "iam:ListRoles",
+        "iam:AttachRolePolicy",
+        "iam:DetachRolePolicy",
+        "iam:PutRolePolicy",
+        "iam:DeleteRolePolicy",
+        "iam:GetRolePolicy",
+        "iam:ListRolePolicies",
+        "iam:ListAttachedRolePolicies",
+        "iam:CreateInstanceProfile",
+        "iam:DeleteInstanceProfile",
+        "iam:GetInstanceProfile",
+        "iam:ListInstanceProfiles",
+        "iam:AddRoleToInstanceProfile",
+        "iam:RemoveRoleFromInstanceProfile",
+        "iam:PassRole",
+        "iam:TagRole",
+        "iam:UntagRole"
+      ],
+      "Resource": [
+        "arn:aws:iam::722504363494:role/dh-portfolio-*",
+        "arn:aws:iam::722504363494:instance-profile/dh-portfolio-*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["ec2:*"],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["rds:*"],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["s3:*"],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["cloudfront:*"],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["route53:*"],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["elasticloadbalancing:*"],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["autoscaling:*"],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["ecr:*"],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["logs:*"],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["cloudwatch:*"],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["acm:*"],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["lambda:*"],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["apigateway:*"],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["secretsmanager:*"],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["ssm:*"],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["kms:*"],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "iam:ListUsers",
+        "iam:GetUser",
+        "iam:ListGroupsForUser",
+        "iam:ListAttachedUserPolicies",
+        "iam:ListUserPolicies"
+      ],
+      "Resource": "arn:aws:iam::722504363494:user/franiel"
+    }
+  ]
+}

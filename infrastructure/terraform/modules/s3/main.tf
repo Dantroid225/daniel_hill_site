@@ -40,6 +40,10 @@ resource "aws_s3_bucket_lifecycle_configuration" "main" {
     id     = "cleanup"
     status = "Enabled"
 
+    filter {
+      prefix = ""
+    }
+
     noncurrent_version_expiration {
       noncurrent_days = 30
     }

@@ -56,8 +56,8 @@ resource "aws_nat_gateway" "main" {
 }
 
 resource "aws_eip" "nat" {
-  count = 2
-  vpc   = true
+  count  = 2
+  domain = "vpc"
 
   tags = {
     Name        = "${var.project_name}-eip-${count.index + 1}"

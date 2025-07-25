@@ -40,6 +40,11 @@ variable "s3_bucket_name" {
   default     = "dh-portfolio-assets"
 }
 
+variable "database_username" {
+  description = "Database username"
+  type        = string
+}
+
 variable "database_password" {
   description = "Database password"
   type        = string
@@ -53,5 +58,10 @@ variable "public_key" {
 
 variable "certificate_arn" {
   description = "ACM certificate ARN"
+  type        = string
+}
+
+variable "existing_db_identifier" {
+  description = "Identifier of the existing RDS database to use"
   type        = string
 } 

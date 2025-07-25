@@ -36,10 +36,10 @@ module "rds" {
   vpc_id           = module.vpc.vpc_id
   subnet_ids       = module.vpc.private_subnet_ids
   instance_type    = var.rds_instance_type
-  database_name    = "${var.project_name}_db"
-  database_username = "admin"
+  database_username = var.database_username
   database_password = var.database_password
   ec2_security_group_id = module.ec2.security_group_id
+  existing_db_identifier = var.existing_db_identifier
 }
 
 # EC2 Configuration
@@ -49,7 +49,7 @@ module "ec2" {
   project_name    = var.project_name
   environment     = var.environment
   vpc_id          = module.vpc.vpc_id
-  subnet_id       = module.vpc.public_subnet_ids[0]
+  subnet_ids      = module.vpc.public_subnet_ids
   instance_type   = var.ec2_instance_type
   key_name        = "${var.project_name}-key"
   public_key      = var.public_key
