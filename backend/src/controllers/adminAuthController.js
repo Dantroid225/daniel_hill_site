@@ -1,13 +1,13 @@
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const { pool } = require("../config/database");
-const { sendResponse } = require("../utils/responseHelper");
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { pool } = require('../config/database');
+const { sendResponse } = require('../utils/responseHelper');
 const {
   validateEmail,
   validatePassword,
   sanitizeInput,
-} = require("../utils/validation");
-const User = require("../models/User");
+} = require('../utils/validation');
+const User = require('../models/User');
 
 const adminAuthController = {
   // Admin login with secure password verification
@@ -16,23 +16,23 @@ const adminAuthController = {
       // Use sanitized data from validation middleware
       const { email, password } = req.sanitizedData || req.body;
 
-      console.log("Admin login attempt for email:", email);
+      console.log('Admin login attempt for email:', email);
 
       // Validate input
       if (!email || !password) {
-        console.log("Missing email or password");
-        return sendResponse(res, 400, false, "Email and password are required");
+        console.log('Missing email or password');
+        return sendResponse(res, 400, false, 'Email and password are required');
       }
 
       // Find admin user by email
       const admin = await User.findAdminByEmail(email);
 
       if (!admin) {
-        console.log("Admin user not found for email:", email);
-        return sendResponse(res, 401, false, "Invalid admin credentials");
+        console.log('Admin user not found for email:', email);
+        return sendResponse(res, 401, false, 'Invalid admin credentials');
       }
 
-      console.log("Admin user found:", {
+      console.log('Admin user found:', {
         id: admin.id,
         email: admin.email,
         role: admin.role,
@@ -40,11 +40,20 @@ const adminAuthController = {
 
       // Verify password securely
       const isPasswordValid = await bcrypt.compare(password, admin.password);
-      console.log("Password validation result:", isPasswordValid);
+      console.log('Password validation result:', isPasswordValid);
 
       if (!isPasswordValid) {
-        console.log("Invalid password for admin:", email);
-        return sendResponse(res, 401, false, "Invalid admin credentials");
+        console.log('Invalid password for admin:', email);
+        return sendResponse(res, 401, false, 'Invalid admin credentials');
+      }
+
+      if (!process.env.JWT_SECRET) {
+        return sendResponse(
+          res,
+          500,
+          false,
+          'JWT_SECRET environment variable is required'
+        );
       }
 
       // Generate admin JWT token with role
@@ -52,15 +61,15 @@ const adminAuthController = {
         {
           userId: admin.id,
           email: admin.email,
-          role: "admin",
+          role: 'admin',
         },
-        process.env.JWT_SECRET || "your-super-secret-jwt-key",
-        { expiresIn: "24h" }
+        process.env.JWT_SECRET,
+        { expiresIn: '24h' }
       );
 
-      console.log("Admin login successful for:", email);
+      console.log('Admin login successful for:', email);
 
-      return sendResponse(res, 200, true, "Admin login successful", {
+      return sendResponse(res, 200, true, 'Admin login successful', {
         token,
         admin: {
           id: admin.id,
@@ -70,14 +79,14 @@ const adminAuthController = {
         },
       });
     } catch (error) {
-      console.error("Error during admin login:", error);
-      return sendResponse(res, 500, false, "Admin login failed");
+      console.error('Error during admin login:', error);
+      return sendResponse(res, 500, false, 'Admin login failed');
     }
   },
 
   // Admin logout
   logout: async (req, res) => {
-    return sendResponse(res, 200, true, "Admin logout successful");
+    return sendResponse(res, 200, true, 'Admin logout successful');
   },
 
   // Get admin profile
@@ -87,20 +96,20 @@ const adminAuthController = {
 
       const admin = await User.findById(adminId);
 
-      if (!admin || admin.role !== "admin") {
-        return sendResponse(res, 404, false, "Admin not found");
+      if (!admin || admin.role !== 'admin') {
+        return sendResponse(res, 404, false, 'Admin not found');
       }
 
       return sendResponse(
         res,
         200,
         true,
-        "Admin profile retrieved successfully",
+        'Admin profile retrieved successfully',
         admin
       );
     } catch (error) {
-      console.error("Error fetching admin profile:", error);
-      return sendResponse(res, 500, false, "Failed to fetch admin profile");
+      console.error('Error fetching admin profile:', error);
+      return sendResponse(res, 500, false, 'Failed to fetch admin profile');
     }
   },
 
@@ -116,7 +125,7 @@ const adminAuthController = {
           res,
           400,
           false,
-          "Current and new password are required"
+          'Current and new password are required'
         );
       }
 
@@ -126,19 +135,19 @@ const adminAuthController = {
         currentPassword
       );
       if (!isCurrentPasswordValid) {
-        return sendResponse(res, 401, false, "Current password is incorrect");
+        return sendResponse(res, 401, false, 'Current password is incorrect');
       }
 
       // Update password
       const success = await User.updatePassword(adminId, newPassword);
       if (!success) {
-        return sendResponse(res, 500, false, "Failed to update password");
+        return sendResponse(res, 500, false, 'Failed to update password');
       }
 
-      return sendResponse(res, 200, true, "Password updated successfully");
+      return sendResponse(res, 200, true, 'Password updated successfully');
     } catch (error) {
-      console.error("Error changing admin password:", error);
-      return sendResponse(res, 500, false, "Failed to change password");
+      console.error('Error changing admin password:', error);
+      return sendResponse(res, 500, false, 'Failed to change password');
     }
   },
 
@@ -153,7 +162,7 @@ const adminAuthController = {
           res,
           400,
           false,
-          "Name, email, and password are required"
+          'Name, email, and password are required'
         );
       }
 
@@ -164,19 +173,19 @@ const adminAuthController = {
           res,
           400,
           false,
-          "Admin with this email already exists"
+          'Admin with this email already exists'
         );
       }
 
       // Create new admin
       const adminId = await User.createAdmin({ name, email, password });
 
-      return sendResponse(res, 201, true, "Admin created successfully", {
+      return sendResponse(res, 201, true, 'Admin created successfully', {
         id: adminId,
       });
     } catch (error) {
-      console.error("Error creating admin:", error);
-      return sendResponse(res, 500, false, "Failed to create admin");
+      console.error('Error creating admin:', error);
+      return sendResponse(res, 500, false, 'Failed to create admin');
     }
   },
 };

@@ -1,5 +1,5 @@
-const nodemailer = require("nodemailer");
-const { validateEmail, sanitizeInput } = require("./validation");
+const nodemailer = require('nodemailer');
+const { validateEmail, sanitizeInput } = require('./validation');
 
 class EmailService {
   constructor() {
@@ -10,9 +10,23 @@ class EmailService {
   // Initialize email transporter
   async initialize() {
     try {
+      // Validate required email environment variables
+      const requiredEmailVars = ['EMAIL_HOST', 'EMAIL_USER', 'EMAIL_PASSWORD'];
+      const missingEmailVars = requiredEmailVars.filter(
+        varName => !process.env[varName]
+      );
+
+      if (missingEmailVars.length > 0) {
+        throw new Error(
+          `Missing required email environment variables: ${missingEmailVars.join(
+            ', '
+          )}`
+        );
+      }
+
       // Exchange configuration
       this.transporter = nodemailer.createTransport({
-        host: process.env.EMAIL_HOST || "outlook.office365.com",
+        host: process.env.EMAIL_HOST,
         port: process.env.EMAIL_PORT || 587,
         secure: false, // true for 465, false for other ports
         auth: {
@@ -20,7 +34,7 @@ class EmailService {
           pass: process.env.EMAIL_PASSWORD,
         },
         tls: {
-          ciphers: "SSLv3",
+          ciphers: 'SSLv3',
           rejectUnauthorized: false,
         },
       });
@@ -28,9 +42,9 @@ class EmailService {
       // Verify connection
       await this.transporter.verify();
       this.isConfigured = true;
-      console.log("Email service initialized successfully");
+      console.log('Email service initialized successfully');
     } catch (error) {
-      console.error("Failed to initialize email service:", error);
+      console.error('Failed to initialize email service:', error);
       this.isConfigured = false;
     }
   }
@@ -38,14 +52,14 @@ class EmailService {
   // Send contact form email
   async sendContactEmail(contactData) {
     if (!this.isConfigured) {
-      throw new Error("Email service not configured");
+      throw new Error('Email service not configured');
     }
 
     // Validate and sanitize input
     const { name, email, subject, message } = contactData;
 
     if (!validateEmail(email)) {
-      throw new Error("Invalid email address");
+      throw new Error('Invalid email address');
     }
 
     const sanitizedName = sanitizeInput(name);
@@ -53,7 +67,7 @@ class EmailService {
     const sanitizedMessage = sanitizeInput(message);
 
     if (!sanitizedName || !sanitizedSubject || !sanitizedMessage) {
-      throw new Error("Missing required fields");
+      throw new Error('Missing required fields');
     }
 
     const mailOptions = {
@@ -77,45 +91,45 @@ class EmailService {
 
     try {
       const result = await this.transporter.sendMail(mailOptions);
-      console.log("Contact email sent successfully:", result.messageId);
+      console.log('Contact email sent successfully:', result.messageId);
       return {
         success: true,
         messageId: result.messageId,
       };
     } catch (error) {
-      console.error("Failed to send contact email:", error);
-      throw new Error("Failed to send email");
+      console.error('Failed to send contact email:', error);
+      throw new Error('Failed to send email');
     }
   }
 
   // Send confirmation email to user
   async sendConfirmationEmail(userEmail, userName) {
     if (!this.isConfigured) {
-      throw new Error("Email service not configured");
+      throw new Error('Email service not configured');
     }
 
     if (!validateEmail(userEmail)) {
-      throw new Error("Invalid email address");
+      throw new Error('Invalid email address');
     }
 
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: userEmail,
-      subject: "Thank you for contacting Daniel Hill",
+      subject: 'Thank you for contacting Daniel Hill',
       html: this.generateConfirmationEmailHTML(userName),
       text: this.generateConfirmationEmailText(userName),
     };
 
     try {
       const result = await this.transporter.sendMail(mailOptions);
-      console.log("Confirmation email sent successfully:", result.messageId);
+      console.log('Confirmation email sent successfully:', result.messageId);
       return {
         success: true,
         messageId: result.messageId,
       };
     } catch (error) {
-      console.error("Failed to send confirmation email:", error);
-      throw new Error("Failed to send confirmation email");
+      console.error('Failed to send confirmation email:', error);
+      throw new Error('Failed to send confirmation email');
     }
   }
 
@@ -159,7 +173,7 @@ class EmailService {
             </div>
             <div class="field">
               <div class="label">Message:</div>
-              <div class="message-box">${message.replace(/\n/g, "<br>")}</div>
+              <div class="message-box">${message.replace(/\n/g, '<br>')}</div>
             </div>
           </div>
         </div>

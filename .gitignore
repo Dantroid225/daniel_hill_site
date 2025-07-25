@@ -1,21 +1,29 @@
 node_modules/
-.env
-.env.deployment
-**/.env.deployment
-.env.local
-.env.development
-.env.test
-.env.production
-dist/
-build/
-*.log 
-docs/
+# Environment files
+.env*
+!.env.example
+# SSH keys
 .ssh/
+*.pem
+*.key
+
+# Terraform files with sensitive data
 terraform.tfvars
+*.tfvars
 *.tfstate
 *.tfstate.*
 .terraform/
 .terraform.lock.hcl
+
+# Database dumps
+*.sql
+!setup-database.sql
+
+# Build and cache directories
+dist/
+build/
+*.log
+docs/
 
 # User uploaded content
 backend/uploads/
@@ -44,3 +52,6 @@ pnpm-lock.yaml
 # Temporary files
 *.tmp
 *.temp
+
+# scripts
+setup-admin.js
