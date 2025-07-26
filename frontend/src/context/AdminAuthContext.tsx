@@ -55,10 +55,10 @@ export const AdminAuthProvider: React.FC<{ children: ReactNode }> = ({
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       const response = await api.post('/api/admin/login', { email, password });
-      const { token, admin } = response.data.data;
+      const { token, user } = response.data.data;
 
       localStorage.setItem('adminToken', token);
-      setAdmin(admin);
+      setAdmin(user);
       return true;
     } catch (error) {
       console.error('Admin login failed:', error);

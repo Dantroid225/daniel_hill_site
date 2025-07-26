@@ -1,6 +1,10 @@
 const jwt = require('jsonwebtoken');
 const { sendResponse } = require('../utils/responseHelper');
 const User = require('../models/User');
+const tokenBlacklist = require('../utils/tokenBlacklist');
+const { getConfig } = require('../config/environment');
+
+const config = getConfig();
 
 const authenticateAdmin = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
@@ -10,18 +14,14 @@ const authenticateAdmin = async (req, res, next) => {
     return sendResponse(res, 401, false, 'Admin access token required');
   }
 
-  if (!process.env.JWT_SECRET) {
-    return sendResponse(
-      res,
-      500,
-      false,
-      'JWT_SECRET environment variable is required'
-    );
+  // Check if token is blacklisted
+  if (tokenBlacklist.isBlacklisted(token)) {
+    return sendResponse(res, 401, false, 'Token has been revoked');
   }
 
   try {
     // Verify JWT token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, config.JWT_SECRET);
 
     // Verify user exists and is admin
     const isAdmin = await User.isAdmin(decoded.userId);
@@ -47,12 +47,13 @@ const optionalAdminAuth = async (req, res, next) => {
     return next(); // Continue without authentication
   }
 
-  if (!process.env.JWT_SECRET) {
+  // Check if token is blacklisted
+  if (tokenBlacklist.isBlacklisted(token)) {
     return next(); // Continue without authentication
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, config.JWT_SECRET);
 
     const isAdmin = await User.isAdmin(decoded.userId);
     if (isAdmin) {

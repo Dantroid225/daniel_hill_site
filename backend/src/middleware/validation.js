@@ -4,14 +4,22 @@ const {
   validateLength,
   validateUrl,
   sanitizeInput,
+  sanitizeHTML,
   validatePortfolioItem,
   validateContactForm,
   validateUserInput,
-} = require("../utils/validation");
+} = require('../utils/validation');
 
 // Generic validation middleware factory
-const createValidationMiddleware = (validationRules) => {
+const createValidationMiddleware = validationRules => {
   return (req, res, next) => {
+    console.log('🔍 Validation middleware called for:', req.path);
+    console.log('📝 Request body:', {
+      email: req.body.email,
+      hasPassword: !!req.body.password,
+      passwordLength: req.body.password?.length,
+    });
+
     const errors = [];
     const sanitizedData = {};
 
@@ -19,12 +27,19 @@ const createValidationMiddleware = (validationRules) => {
     for (const [field, rules] of Object.entries(validationRules)) {
       const value = req.body[field] || req.query[field] || req.params[field];
 
+      console.log(`🔍 Validating field '${field}':`, {
+        hasValue: !!value,
+        valueLength: value?.length,
+        rules,
+      });
+
       // Required field validation
       if (
         rules.required &&
-        (!value || (typeof value === "string" && !value.trim()))
+        (!value || (typeof value === 'string' && !value.trim()))
       ) {
         errors.push(`${field} is required`);
+        console.log(`❌ Field '${field}' is required but missing or empty`);
         continue;
       }
 
@@ -33,26 +48,74 @@ const createValidationMiddleware = (validationRules) => {
         continue;
       }
 
-      // Sanitize input
+      // Sanitize input based on rules
       let sanitizedValue = value;
       if (rules.sanitize !== false) {
-        sanitizedValue = sanitizeInput(value);
+        if (rules.allowHTML) {
+          sanitizedValue = sanitizeHTML(value);
+        } else {
+          sanitizedValue = sanitizeInput(value);
+        }
+      }
+
+      // Pre-parse values for specific fields before validation
+      if (field === 'technologies' && typeof sanitizedValue === 'string') {
+        try {
+          sanitizedValue = JSON.parse(sanitizedValue);
+        } catch (error) {
+          errors.push('Technologies must be a valid JSON array');
+          console.log(`❌ Field '${field}' JSON parsing failed`);
+          continue;
+        }
+      }
+
+      if (field === 'featured') {
+        // Handle featured field conversion - FormData sends '0' for false, '1' for true
+        console.log(`🔍 Featured field debug - Original value:`, {
+          value: sanitizedValue,
+          type: typeof sanitizedValue,
+          length: sanitizedValue?.length,
+        });
+
+        if (typeof sanitizedValue === 'string') {
+          if (sanitizedValue === 'true' || sanitizedValue === '1') {
+            sanitizedValue = true;
+            console.log(`✅ Featured converted to true`);
+          } else if (sanitizedValue === 'false' || sanitizedValue === '0') {
+            sanitizedValue = false;
+            console.log(`✅ Featured converted to false`);
+          }
+        }
+        // If already boolean, no conversion needed
+
+        console.log(`🔍 Featured field debug - After conversion:`, {
+          value: sanitizedValue,
+          type: typeof sanitizedValue,
+        });
       }
 
       // Type validation
       if (rules.type) {
-        if (rules.type === "email" && !validateEmail(sanitizedValue)) {
+        if (rules.type === 'email' && !validateEmail(sanitizedValue)) {
           errors.push(`${field} must be a valid email address`);
+          console.log(`❌ Field '${field}' email validation failed`);
         }
-        if (rules.type === "url" && !validateUrl(sanitizedValue)) {
+        if (rules.type === 'url' && !validateUrl(sanitizedValue)) {
           errors.push(`${field} must be a valid URL`);
+          console.log(`❌ Field '${field}' URL validation failed`);
         }
-        if (rules.type === "password") {
+        if (rules.type === 'password') {
           const passwordValidation = validatePassword(sanitizedValue);
           if (!passwordValidation.isValid) {
-            errors.push(
-              ...passwordValidation.errors.map((err) => `${field}: ${err}`)
+            console.log(
+              `❌ Field '${field}' password validation failed:`,
+              passwordValidation.errors
             );
+            errors.push(
+              ...passwordValidation.errors.map(err => `${field}: ${err}`)
+            );
+          } else {
+            console.log(`✅ Field '${field}' password validation passed`);
           }
         }
       }
@@ -78,6 +141,7 @@ const createValidationMiddleware = (validationRules) => {
               `${field} must be no more than ${rules.maxLength} characters`
             );
           }
+          console.log(`❌ Field '${field}' length validation failed`);
         }
       }
 
@@ -86,6 +150,10 @@ const createValidationMiddleware = (validationRules) => {
         const customResult = rules.custom(sanitizedValue, req);
         if (customResult !== true) {
           errors.push(customResult || `${field} is invalid`);
+          console.log(
+            `❌ Field '${field}' custom validation failed:`,
+            customResult
+          );
         }
       }
 
@@ -95,13 +163,15 @@ const createValidationMiddleware = (validationRules) => {
 
     // If there are validation errors, return them
     if (errors.length > 0) {
+      console.log('❌ Validation failed with errors:', errors);
       return res.status(400).json({
         success: false,
-        message: "Validation failed",
+        message: 'Validation failed',
         errors: errors,
       });
     }
 
+    console.log('✅ Validation passed, proceeding to controller');
     // Attach sanitized data to request
     req.sanitizedData = sanitizedData;
     next();
@@ -113,29 +183,43 @@ const validationRules = {
   // Contact form validation
   contactForm: {
     name: { required: true, maxLength: 255, sanitize: true },
-    email: { required: true, type: "email", sanitize: true },
+    email: { required: true, type: 'email', sanitize: true },
     subject: { required: true, maxLength: 255, sanitize: true },
     message: { required: true, maxLength: 5000, sanitize: true },
   },
 
   // Admin login validation
   adminLogin: {
-    email: { required: true, type: "email", sanitize: true },
-    password: { required: true, type: "password" },
+    email: { required: true, type: 'email', sanitize: true },
+    password: { required: true, type: 'password' },
   },
 
   // Portfolio item validation
   portfolioItem: {
     title: { required: true, maxLength: 255, sanitize: true },
-    description: { required: true, maxLength: 5000, sanitize: true },
+    description: {
+      required: true,
+      maxLength: 5000,
+      sanitize: true,
+      allowHTML: true,
+    },
     category: { required: true, maxLength: 100, sanitize: true },
-    project_url: { required: false, type: "url", sanitize: true },
+    project_url: { required: false, type: 'url', sanitize: true },
     technologies: {
       required: true,
       sanitize: false,
-      custom: (value) => {
+      custom: value => {
         if (!Array.isArray(value) || value.length === 0) {
-          return "Technologies must be an array with at least one item";
+          return 'Technologies must be an array with at least one item';
+        }
+
+        // Sanitize each technology item
+        if (Array.isArray(value)) {
+          value.forEach((tech, index) => {
+            if (typeof tech === 'string') {
+              value[index] = sanitizeInput(tech);
+            }
+          });
         }
         return true;
       },
@@ -143,10 +227,10 @@ const validationRules = {
     status: {
       required: false,
       sanitize: true,
-      custom: (value) => {
-        const validStatuses = ["draft", "published", "archived"];
+      custom: value => {
+        const validStatuses = ['draft', 'published', 'archived'];
         if (value && !validStatuses.includes(value)) {
-          return "Status must be one of: draft, published, archived";
+          return 'Status must be one of: draft, published, archived';
         }
         return true;
       },
@@ -154,9 +238,13 @@ const validationRules = {
     featured: {
       required: false,
       sanitize: false,
-      custom: (value) => {
-        if (value !== undefined && typeof value !== "boolean") {
-          return "Featured must be a boolean value";
+      custom: value => {
+        if (
+          value !== undefined &&
+          value !== null &&
+          typeof value !== 'boolean'
+        ) {
+          return 'Featured must be a boolean value';
         }
         return true;
       },
@@ -166,15 +254,15 @@ const validationRules = {
   // User registration validation
   userRegistration: {
     name: { required: true, maxLength: 255, sanitize: true },
-    email: { required: true, type: "email", sanitize: true },
-    password: { required: true, type: "password" },
+    email: { required: true, type: 'email', sanitize: true },
+    password: { required: true, type: 'password' },
     role: {
       required: false,
       sanitize: true,
-      custom: (value) => {
-        const validRoles = ["admin", "user"];
+      custom: value => {
+        const validRoles = ['admin', 'user'];
         if (value && !validRoles.includes(value)) {
-          return "Role must be either admin or user";
+          return 'Role must be either admin or user';
         }
         return true;
       },

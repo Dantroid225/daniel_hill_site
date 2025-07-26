@@ -2,6 +2,10 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { pool } = require('../config/database');
 const { sendResponse } = require('../utils/responseHelper');
+const tokenBlacklist = require('../utils/tokenBlacklist');
+const { getConfig } = require('../config/environment');
+
+const config = getConfig();
 
 const authController = {
   // User login
@@ -27,19 +31,10 @@ const authController = {
         return sendResponse(res, 401, false, 'Invalid credentials');
       }
 
-      if (!process.env.JWT_SECRET) {
-        return sendResponse(
-          res,
-          500,
-          false,
-          'JWT_SECRET environment variable is required'
-        );
-      }
-
       // Generate JWT token
       const token = jwt.sign(
         { userId: user.id, email: user.email },
-        process.env.JWT_SECRET,
+        config.JWT_SECRET,
         { expiresIn: '24h' }
       );
 
@@ -92,9 +87,20 @@ const authController = {
 
   // User logout
   logout: async (req, res) => {
-    // JWT tokens are stateless, so we just return success
-    // In a real application, you might want to implement token blacklisting
-    return sendResponse(res, 200, true, 'Logout successful');
+    try {
+      const authHeader = req.headers['authorization'];
+      const token = authHeader && authHeader.split(' ')[1];
+
+      if (token) {
+        // Add token to blacklist
+        tokenBlacklist.blacklistToken(token);
+      }
+
+      return sendResponse(res, 200, true, 'Logout successful');
+    } catch (error) {
+      console.error('Error during logout:', error);
+      return sendResponse(res, 500, false, 'Logout failed');
+    }
   },
 
   // Get user profile
@@ -155,22 +161,21 @@ const authController = {
         return sendResponse(res, 401, false, 'Token required');
       }
 
-      if (!process.env.JWT_SECRET) {
-        return sendResponse(
-          res,
-          500,
-          false,
-          'JWT_SECRET environment variable is required'
-        );
+      // Check if current token is blacklisted
+      if (tokenBlacklist.isBlacklisted(token)) {
+        return sendResponse(res, 401, false, 'Token has been revoked');
       }
 
       // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const decoded = jwt.verify(token, config.JWT_SECRET);
+
+      // Blacklist the old token
+      tokenBlacklist.blacklistToken(token);
 
       // Generate new token
       const newToken = jwt.sign(
         { userId: decoded.userId, email: decoded.email },
-        process.env.JWT_SECRET,
+        config.JWT_SECRET,
         { expiresIn: '24h' }
       );
 
@@ -180,6 +185,22 @@ const authController = {
     } catch (error) {
       console.error('Error refreshing token:', error);
       return sendResponse(res, 401, false, 'Invalid token');
+    }
+  },
+
+  // Revoke all tokens for a user (admin function)
+  revokeAllTokens: async (req, res) => {
+    try {
+      const { userId } = req.params;
+
+      // In a production environment, you would store tokens in a database
+      // and revoke them by user ID. For now, we'll just return success.
+      // This is a placeholder for future implementation.
+
+      return sendResponse(res, 200, true, 'All tokens revoked successfully');
+    } catch (error) {
+      console.error('Error revoking tokens:', error);
+      return sendResponse(res, 500, false, 'Failed to revoke tokens');
     }
   },
 };

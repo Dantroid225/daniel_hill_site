@@ -1,5 +1,8 @@
 const nodemailer = require('nodemailer');
 const { validateEmail, sanitizeInput } = require('./validation');
+const { getConfig } = require('../config/environment');
+
+const config = getConfig();
 
 class EmailService {
   constructor() {
@@ -10,28 +13,23 @@ class EmailService {
   // Initialize email transporter
   async initialize() {
     try {
-      // Validate required email environment variables
-      const requiredEmailVars = ['EMAIL_HOST', 'EMAIL_USER', 'EMAIL_PASSWORD'];
-      const missingEmailVars = requiredEmailVars.filter(
-        varName => !process.env[varName]
-      );
-
-      if (missingEmailVars.length > 0) {
-        throw new Error(
-          `Missing required email environment variables: ${missingEmailVars.join(
-            ', '
-          )}`
+      // Check if email configuration is available
+      if (!config.EMAIL_HOST || !config.EMAIL_USER || !config.EMAIL_PASSWORD) {
+        console.warn(
+          'Email configuration not available - email service will be disabled'
         );
+        this.isConfigured = false;
+        return;
       }
 
       // Exchange configuration
       this.transporter = nodemailer.createTransport({
-        host: process.env.EMAIL_HOST,
-        port: process.env.EMAIL_PORT || 587,
+        host: config.EMAIL_HOST,
+        port: config.EMAIL_PORT,
         secure: false, // true for 465, false for other ports
         auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASSWORD,
+          user: config.EMAIL_USER,
+          pass: config.EMAIL_PASSWORD,
         },
         tls: {
           ciphers: 'SSLv3',
@@ -71,8 +69,8 @@ class EmailService {
     }
 
     const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: process.env.CONTACT_EMAIL || process.env.EMAIL_USER,
+      from: config.EMAIL_USER,
+      to: config.CONTACT_EMAIL || config.EMAIL_USER,
       replyTo: email,
       subject: `Portfolio Contact: ${sanitizedSubject}`,
       html: this.generateContactEmailHTML({
@@ -113,7 +111,7 @@ class EmailService {
     }
 
     const mailOptions = {
-      from: process.env.EMAIL_USER,
+      from: config.EMAIL_USER,
       to: userEmail,
       subject: 'Thank you for contacting Daniel Hill',
       html: this.generateConfirmationEmailHTML(userName),

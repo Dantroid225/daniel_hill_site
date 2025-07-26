@@ -24,7 +24,9 @@ const ContactForm: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name as keyof FormData]) {
@@ -59,14 +61,18 @@ const ContactForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     setLoading(true);
     try {
-      await api.post('/api/contact', formData);
-      setSuccess(true);
-      setFormData({ name: '', email: '', subject: '', message: '' });
+      const response = await api.post('/api/contact/submit', formData);
+      if (response.data.success) {
+        setSuccess(true);
+        setFormData({ name: '', email: '', subject: '', message: '' });
+      } else {
+        console.error('Form submission failed:', response.data.message);
+      }
     } catch (error) {
       console.error('Error sending message:', error);
     } finally {
@@ -79,10 +85,10 @@ const ContactForm: React.FC = () => {
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="text-center p-8"
+        className='text-center p-8'
       >
-        <h3 className="text-2xl font-bold text-primary mb-4">Message Sent!</h3>
-        <p className="text-muted-foreground mb-4">
+        <h3 className='text-2xl font-bold text-primary mb-4'>Message Sent!</h3>
+        <p className='text-muted-foreground mb-4'>
           Thank you for your message. I'll get back to you soon!
         </p>
         <Button onClick={() => setSuccess(false)}>Send Another Message</Button>
@@ -96,12 +102,12 @@ const ContactForm: React.FC = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
       onSubmit={handleSubmit}
-      className="space-y-6"
+      className='space-y-6'
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
         <Input
-          label="Name"
-          name="name"
+          label='Name'
+          name='name'
           value={formData.name}
           onChange={handleChange}
           error={errors.name}
@@ -109,9 +115,9 @@ const ContactForm: React.FC = () => {
         />
 
         <Input
-          label="Email"
-          type="email"
-          name="email"
+          label='Email'
+          type='email'
+          name='email'
           value={formData.email}
           onChange={handleChange}
           error={errors.email}
@@ -120,8 +126,8 @@ const ContactForm: React.FC = () => {
       </div>
 
       <Input
-        label="Subject"
-        name="subject"
+        label='Subject'
+        name='subject'
         value={formData.subject}
         onChange={handleChange}
         error={errors.subject}
@@ -129,8 +135,8 @@ const ContactForm: React.FC = () => {
       />
 
       <TextArea
-        label="Message"
-        name="message"
+        label='Message'
+        name='message'
         value={formData.message}
         onChange={handleChange}
         error={errors.message}
@@ -138,11 +144,11 @@ const ContactForm: React.FC = () => {
         required
       />
 
-      <Button type="submit" loading={loading} className="w-full">
+      <Button type='submit' loading={loading} className='w-full'>
         Send Message
       </Button>
     </motion.form>
   );
 };
 
-export default ContactForm; 
+export default ContactForm;

@@ -1,47 +1,107 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const session = require('express-session');
+const rateLimit = require('express-rate-limit');
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '../.env') });
+
+// Import and validate environment configuration
+const { getConfig } = require('./config/environment');
+const config = getConfig();
 
 const apiRoutes = require('./routes/api');
 const { connectDB } = require('./config/database');
 const emailService = require('./utils/emailService');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = config.PORT;
 
-// Middleware
-// Helmet configuration
+// Session configuration
+app.use(
+  session({
+    secret: config.SESSION_SECRET,
+    resave: true, // Changed to true to ensure session is saved
+    saveUninitialized: true, // Changed to true to save new sessions
+    cookie: {
+      secure: config.NODE_ENV === 'production',
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      sameSite: config.NODE_ENV === 'production' ? 'strict' : 'lax',
+    },
+    name: 'sessionId', // Change default session cookie name
+  })
+);
+
+// Rate limiting configuration
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: {
+    success: false,
+    message: 'Too many requests from this IP, please try again later.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply rate limiting to all routes
+app.use(limiter);
+
+// Stricter rate limiting for authentication routes
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // limit each IP to 5 requests per windowMs
+  message: {
+    success: false,
+    message: 'Too many authentication attempts, please try again later.',
+  },
+  skipSuccessfulRequests: true,
+});
+
+// Helmet configuration with enhanced security
 const helmetConfig = {
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", 'data:', 'blob:', 'http:', 'https:'],
+      imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
       scriptSrc: ["'self'"],
       connectSrc: ["'self'"],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"],
     },
   },
   crossOriginEmbedderPolicy: false,
   crossOriginResourcePolicy: { policy: 'cross-origin' },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true,
+  },
+  noSniff: true,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 };
 
 // In development, we might want to be more permissive
-if (process.env.NODE_ENV === 'development') {
+if (config.NODE_ENV === 'development') {
   helmetConfig.contentSecurityPolicy = false; // Disable CSP in development for easier debugging
 }
 
 app.use(helmet(helmetConfig));
-// CORS configuration
+
+// CORS configuration - Fixed to be more secure
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
+    // In production, reject requests with no origin
+    if (config.NODE_ENV === 'production' && !origin) {
+      return callback(new Error('Not allowed by CORS - no origin'));
+    }
 
     const allowedOrigins =
-      process.env.NODE_ENV === 'production'
-        ? process.env.ALLOWED_ORIGINS?.split(',') || []
+      config.NODE_ENV === 'production'
+        ? config.ALLOWED_ORIGINS?.split(',') || []
         : [
             'http://localhost:3000',
             'http://localhost:5173',
@@ -51,7 +111,7 @@ const corsOptions = {
             'http://127.0.0.1:4173',
           ];
 
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
       console.warn(`CORS blocked origin: ${origin}`);
@@ -60,13 +120,17 @@ const corsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
   optionsSuccessStatus: 200, // Some legacy browsers choke on 204
 };
 
 app.use(cors(corsOptions));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Apply stricter rate limiting to auth routes
+app.use('/api/auth', authLimiter);
+app.use('/api/admin', authLimiter);
 
 // Static files with CORS headers
 app.use(
@@ -126,8 +190,14 @@ app.use('/', healthRoutes);
 
 // Error handling middleware
 app.use((err, req, res, _next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Something went wrong!' });
+  console.error('Error:', err.message);
+  // Don't expose stack traces in production
+  if (config.NODE_ENV === 'production') {
+    res.status(500).json({ error: 'Something went wrong!' });
+  } else {
+    console.error(err.stack);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Start server

@@ -29,7 +29,10 @@
     "express-validator": "^7.0.1",
     "compression": "^1.7.4",
     "express-rate-limit": "^7.4.1",
-    "nodemailer": "^7.0.5"
+    "nodemailer": "^7.0.5",
+    "express-session": "^1.18.0",
+    "jsdom": "^24.0.0",
+    "dompurify": "^3.0.8"
   },
   "devDependencies": {
     "nodemon": "^3.1.9",

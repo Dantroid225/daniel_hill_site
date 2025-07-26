@@ -1,7 +1,10 @@
 const AWS = require('aws-sdk');
+const { getConfig } = require('./environment');
+
+const config = getConfig();
 
 const cloudwatch = new AWS.CloudWatch({
-  region: process.env.AWS_REGION || 'us-east-1',
+  region: config.AWS_REGION,
 });
 
 const logMetric = async (metricName, value, unit = 'Count') => {

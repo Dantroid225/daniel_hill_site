@@ -13,9 +13,37 @@ const api = axios.create({
   },
 });
 
+// CSRF token management
+let csrfToken: string | null = null;
+
+const getCSRFToken = async (): Promise<string> => {
+  if (!csrfToken) {
+    try {
+      console.log(
+        '🔄 Fetching CSRF token from:',
+        `${API_BASE_URL}/api/csrf-token`
+      );
+      const response = await axios.get(`${API_BASE_URL}/api/csrf-token`);
+      csrfToken = response.data.csrfToken;
+      console.log(
+        '✅ CSRF token received:',
+        csrfToken ? csrfToken.substring(0, 10) + '...' : 'none'
+      );
+    } catch (error) {
+      console.error('❌ Failed to get CSRF token:', error);
+    }
+  } else {
+    console.log(
+      '📋 Using cached CSRF token:',
+      csrfToken.substring(0, 10) + '...'
+    );
+  }
+  return csrfToken || '';
+};
+
 // Request interceptor
 api.interceptors.request.use(
-  config => {
+  async config => {
     const token = localStorage.getItem('token');
     const adminToken = localStorage.getItem('adminToken');
 
@@ -25,6 +53,25 @@ api.interceptors.request.use(
     } else if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Add CSRF token for non-GET requests, but skip for authentication endpoints
+    if (
+      config.method !== 'get' &&
+      !config.url?.includes('/login') &&
+      !config.url?.includes('/register') &&
+      !config.url?.includes('/auth/login') &&
+      !config.url?.includes('/admin/login')
+    ) {
+      console.log('🔒 Adding CSRF token to request:', config.url);
+      const csrf = await getCSRFToken();
+      if (csrf) {
+        config.headers['X-CSRF-Token'] = csrf;
+        console.log('✅ CSRF token added to headers');
+      } else {
+        console.log('⚠️ No CSRF token available');
+      }
+    }
+
     return config;
   },
   error => {

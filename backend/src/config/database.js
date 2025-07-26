@@ -1,23 +1,15 @@
 const mysql = require('mysql2/promise');
-const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '../../.env') });
+const { getConfig } = require('./environment');
 
-// Validate required environment variables
-const requiredEnvVars = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
-const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
-
-if (missingVars.length > 0) {
-  throw new Error(
-    `Missing required environment variables: ${missingVars.join(', ')}`
-  );
-}
+// Get validated environment configuration
+const config = getConfig();
 
 const dbConfig = {
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  port: process.env.DB_PORT || 3306,
+  host: config.DB_HOST,
+  user: config.DB_USER,
+  password: config.DB_PASSWORD,
+  database: config.DB_NAME,
+  port: config.DB_PORT,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,

@@ -88,15 +88,6 @@ const AdminLoginPage: React.FC = () => {
                 {isLoading ? 'Signing in...' : 'Sign In'}
               </Button>
             </form>
-
-            <div className='mt-6 text-center text-sm text-muted-foreground'>
-              <p>Default credentials:</p>
-              <p>Email: admin@danielhill.dev</p>
-              <p>Password: admin123</p>
-              <p className='mt-2 text-xs'>
-                Please change these credentials after first login
-              </p>
-            </div>
           </div>
         </Card>
       </motion.div>

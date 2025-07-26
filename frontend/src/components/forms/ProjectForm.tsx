@@ -102,7 +102,8 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
     submitFormData.append('category', formData.category);
     submitFormData.append('display_order', formData.display_order.toString());
     submitFormData.append('status', formData.status);
-    submitFormData.append('featured', formData.featured.toString());
+    // Send featured as a proper boolean value (FormData will convert it correctly)
+    submitFormData.append('featured', formData.featured);
     submitFormData.append(
       'technologies',
       JSON.stringify(formData.technologies)

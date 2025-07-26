@@ -1,5 +1,9 @@
 const jwt = require('jsonwebtoken');
 const { sendResponse } = require('../utils/responseHelper');
+const tokenBlacklist = require('../utils/tokenBlacklist');
+const { getConfig } = require('../config/environment');
+
+const config = getConfig();
 
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
@@ -9,16 +13,12 @@ const authenticateToken = (req, res, next) => {
     return sendResponse(res, 401, false, 'Access token required');
   }
 
-  if (!process.env.JWT_SECRET) {
-    return sendResponse(
-      res,
-      500,
-      false,
-      'JWT_SECRET environment variable is required'
-    );
+  // Check if token is blacklisted
+  if (tokenBlacklist.isBlacklisted(token)) {
+    return sendResponse(res, 401, false, 'Token has been revoked');
   }
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+  jwt.verify(token, config.JWT_SECRET, (err, user) => {
     if (err) {
       return sendResponse(res, 403, false, 'Invalid or expired token');
     }

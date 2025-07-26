@@ -2,76 +2,76 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { pool } = require('../config/database');
 const { sendResponse } = require('../utils/responseHelper');
-const {
-  validateEmail,
-  validatePassword,
-  sanitizeInput,
-} = require('../utils/validation');
-const User = require('../models/User');
+const tokenBlacklist = require('../utils/tokenBlacklist');
+const { getConfig } = require('../config/environment');
+
+const config = getConfig();
 
 const adminAuthController = {
-  // Admin login with secure password verification
+  // Admin login
   login: async (req, res) => {
     try {
-      // Use sanitized data from validation middleware
-      const { email, password } = req.sanitizedData || req.body;
+      const { email, password } = req.body;
 
-      console.log('Admin login attempt for email:', email);
+      console.log('🔍 Admin login attempt:', {
+        email,
+        passwordLength: password?.length,
+      });
 
-      // Validate input
-      if (!email || !password) {
-        console.log('Missing email or password');
-        return sendResponse(res, 400, false, 'Email and password are required');
-      }
+      // Find admin by email
+      const [admins] = await pool.execute(
+        'SELECT * FROM users WHERE email = ? AND role = "admin"',
+        [email]
+      );
 
-      // Find admin user by email
-      const admin = await User.findAdminByEmail(email);
+      console.log('📊 Database query result:', {
+        foundAdmins: admins.length,
+        adminExists: admins.length > 0,
+      });
 
-      if (!admin) {
-        console.log('Admin user not found for email:', email);
+      if (admins.length === 0) {
+        console.log('❌ No admin user found with email:', email);
         return sendResponse(res, 401, false, 'Invalid admin credentials');
       }
 
-      console.log('Admin user found:', {
+      const admin = admins[0];
+      console.log('✅ Admin user found:', {
         id: admin.id,
         email: admin.email,
         role: admin.role,
+        hasPassword: !!admin.password,
       });
 
-      // Verify password securely
+      // Check password
       const isPasswordValid = await bcrypt.compare(password, admin.password);
-      console.log('Password validation result:', isPasswordValid);
+      console.log('🔐 Password validation result:', {
+        isPasswordValid,
+        providedPasswordLength: password?.length,
+        storedPasswordHash: admin.password?.substring(0, 20) + '...',
+      });
 
       if (!isPasswordValid) {
-        console.log('Invalid password for admin:', email);
+        console.log('❌ Password validation failed for admin:', email);
         return sendResponse(res, 401, false, 'Invalid admin credentials');
       }
 
-      if (!process.env.JWT_SECRET) {
-        return sendResponse(
-          res,
-          500,
-          false,
-          'JWT_SECRET environment variable is required'
-        );
-      }
+      console.log('✅ Password validation successful for admin:', email);
 
-      // Generate admin JWT token with role
+      // Generate JWT token
       const token = jwt.sign(
-        {
-          userId: admin.id,
-          email: admin.email,
-          role: 'admin',
-        },
-        process.env.JWT_SECRET,
+        { userId: admin.id, email: admin.email, role: 'admin' },
+        config.JWT_SECRET,
         { expiresIn: '24h' }
       );
 
-      console.log('Admin login successful for:', email);
+      console.log('🎉 Admin login successful:', {
+        email,
+        tokenGenerated: !!token,
+      });
 
       return sendResponse(res, 200, true, 'Admin login successful', {
         token,
-        admin: {
+        user: {
           id: admin.id,
           name: admin.name,
           email: admin.email,
@@ -79,24 +79,40 @@ const adminAuthController = {
         },
       });
     } catch (error) {
-      console.error('Error during admin login:', error);
+      console.error('💥 Error during admin login:', error);
       return sendResponse(res, 500, false, 'Admin login failed');
     }
   },
 
   // Admin logout
   logout: async (req, res) => {
-    return sendResponse(res, 200, true, 'Admin logout successful');
+    try {
+      const authHeader = req.headers['authorization'];
+      const token = authHeader && authHeader.split(' ')[1];
+
+      if (token) {
+        // Add token to blacklist
+        tokenBlacklist.blacklistToken(token);
+      }
+
+      return sendResponse(res, 200, true, 'Admin logout successful');
+    } catch (error) {
+      console.error('Error during admin logout:', error);
+      return sendResponse(res, 500, false, 'Admin logout failed');
+    }
   },
 
   // Get admin profile
   getProfile: async (req, res) => {
     try {
-      const adminId = req.user.userId;
+      const userId = req.user.userId;
 
-      const admin = await User.findById(adminId);
+      const [admins] = await pool.execute(
+        'SELECT id, name, email, role, created_at FROM users WHERE id = ? AND role = "admin"',
+        [userId]
+      );
 
-      if (!admin || admin.role !== 'admin') {
+      if (admins.length === 0) {
         return sendResponse(res, 404, false, 'Admin not found');
       }
 
@@ -105,7 +121,7 @@ const adminAuthController = {
         200,
         true,
         'Admin profile retrieved successfully',
-        admin
+        admins[0]
       );
     } catch (error) {
       console.error('Error fetching admin profile:', error);
@@ -116,72 +132,71 @@ const adminAuthController = {
   // Change admin password
   changePassword: async (req, res) => {
     try {
-      const adminId = req.user.userId;
+      const userId = req.user.userId;
       const { currentPassword, newPassword } = req.body;
 
-      // Validate input
-      if (!currentPassword || !newPassword) {
-        return sendResponse(
-          res,
-          400,
-          false,
-          'Current and new password are required'
-        );
+      // Get current admin
+      const [admins] = await pool.execute(
+        'SELECT password FROM users WHERE id = ? AND role = "admin"',
+        [userId]
+      );
+
+      if (admins.length === 0) {
+        return sendResponse(res, 404, false, 'Admin not found');
       }
 
       // Verify current password
-      const isCurrentPasswordValid = await User.verifyPassword(
-        adminId,
-        currentPassword
+      const isCurrentPasswordValid = await bcrypt.compare(
+        currentPassword,
+        admins[0].password
       );
+
       if (!isCurrentPasswordValid) {
-        return sendResponse(res, 401, false, 'Current password is incorrect');
+        return sendResponse(res, 400, false, 'Current password is incorrect');
       }
+
+      // Hash new password
+      const hashedNewPassword = await bcrypt.hash(newPassword, 12);
 
       // Update password
-      const success = await User.updatePassword(adminId, newPassword);
-      if (!success) {
-        return sendResponse(res, 500, false, 'Failed to update password');
-      }
+      await pool.execute(
+        'UPDATE users SET password = ?, updated_at = NOW() WHERE id = ?',
+        [hashedNewPassword, userId]
+      );
 
-      return sendResponse(res, 200, true, 'Password updated successfully');
+      return sendResponse(res, 200, true, 'Password changed successfully');
     } catch (error) {
       console.error('Error changing admin password:', error);
       return sendResponse(res, 500, false, 'Failed to change password');
     }
   },
 
-  // Create new admin (super admin only)
+  // Create new admin
   createAdmin: async (req, res) => {
     try {
       const { name, email, password } = req.body;
 
-      // Validate input
-      if (!name || !email || !password) {
-        return sendResponse(
-          res,
-          400,
-          false,
-          'Name, email, and password are required'
-        );
-      }
-
       // Check if admin already exists
-      const existingAdmin = await User.findAdminByEmail(email);
-      if (existingAdmin) {
-        return sendResponse(
-          res,
-          400,
-          false,
-          'Admin with this email already exists'
-        );
+      const [existingAdmins] = await pool.execute(
+        'SELECT id FROM users WHERE email = ?',
+        [email]
+      );
+
+      if (existingAdmins.length > 0) {
+        return sendResponse(res, 400, false, 'Admin already exists');
       }
 
-      // Create new admin
-      const adminId = await User.createAdmin({ name, email, password });
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 12);
+
+      // Create admin
+      const [result] = await pool.execute(
+        'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, "admin")',
+        [name, email, hashedPassword]
+      );
 
       return sendResponse(res, 201, true, 'Admin created successfully', {
-        id: adminId,
+        id: result.insertId,
       });
     } catch (error) {
       console.error('Error creating admin:', error);

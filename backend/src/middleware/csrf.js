@@ -1,77 +1,126 @@
-const crypto = require("crypto");
+const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
+const { getConfig } = require('../config/environment');
+
+const config = getConfig();
 
 // CSRF token generation and validation middleware
 const csrfMiddleware = {
   // Generate CSRF token
-  generateToken: (req, res, next) => {
-    if (!req.session) {
-      return res.status(500).json({
-        success: false,
-        message: "Session not available",
-      });
-    }
+  generateToken: (req, res) => {
+    console.log('🔄 Generating CSRF token...');
 
     // Generate a random token
-    const token = crypto.randomBytes(32).toString("hex");
+    const token = crypto.randomBytes(32).toString('hex');
 
-    // Store token in session
-    req.session.csrfToken = token;
+    // Create a signed JWT with the token and timestamp
+    const csrfPayload = {
+      token,
+      timestamp: Date.now(),
+      userAgent: req.headers['user-agent'] || 'unknown',
+      ip: req.ip || req.connection.remoteAddress,
+    };
 
-    // Add token to response headers for frontend access
-    res.setHeader("X-CSRF-Token", token);
+    const signedToken = jwt.sign(csrfPayload, config.JWT_SECRET, {
+      expiresIn: '1h',
+    });
 
-    next();
+    console.log('✅ CSRF token generated:', {
+      token: token.substring(0, 10) + '...',
+    });
+
+    // Return the signed token
+    res.json({
+      success: true,
+      csrfToken: signedToken,
+    });
   },
 
   // Validate CSRF token
   validateToken: (req, res, next) => {
+    console.log('🔒 CSRF validation for:', req.method, req.path);
+
     // Skip CSRF validation for GET requests
-    if (req.method === "GET") {
+    if (req.method === 'GET') {
       return next();
     }
 
-    if (!req.session) {
-      return res.status(500).json({
-        success: false,
-        message: "Session not available",
-      });
-    }
-
-    const tokenFromHeader = req.headers["x-csrf-token"];
+    const tokenFromHeader = req.headers['x-csrf-token'];
     const tokenFromBody = req.body._csrf;
     const tokenFromQuery = req.query._csrf;
 
     const providedToken = tokenFromHeader || tokenFromBody || tokenFromQuery;
-    const sessionToken = req.session.csrfToken;
 
-    if (!providedToken || !sessionToken || providedToken !== sessionToken) {
+    console.log('🔍 CSRF Token Debug:', {
+      tokenFromHeader: !!tokenFromHeader,
+      tokenFromBody: !!tokenFromBody,
+      tokenFromQuery: !!tokenFromQuery,
+      providedToken: providedToken ? 'present' : 'none',
+    });
+
+    if (!providedToken) {
+      console.log('❌ CSRF validation failed: No token provided');
       return res.status(403).json({
         success: false,
-        message: "Invalid CSRF token",
+        message: 'CSRF token required',
       });
     }
 
-    // Token is valid, proceed
-    next();
+    try {
+      // Verify the JWT
+      const decoded = jwt.verify(providedToken, config.JWT_SECRET);
+
+      // Check if token is too old (additional security)
+      const tokenAge = Date.now() - decoded.timestamp;
+      if (tokenAge > 60 * 60 * 1000) {
+        // 1 hour
+        console.log('❌ CSRF validation failed: Token too old');
+        return res.status(403).json({
+          success: false,
+          message: 'CSRF token expired',
+        });
+      }
+
+      // Optional: Check user agent and IP for additional security
+      const currentUserAgent = req.headers['user-agent'] || 'unknown';
+      const currentIp = req.ip || req.connection.remoteAddress;
+
+      if (decoded.userAgent !== currentUserAgent || decoded.ip !== currentIp) {
+        console.log('⚠️ CSRF token user agent/IP mismatch, but proceeding');
+        // You can make this stricter by rejecting the request
+      }
+
+      console.log('✅ CSRF validation passed');
+      next();
+    } catch (error) {
+      console.log('❌ CSRF validation failed: Invalid token');
+      return res.status(403).json({
+        success: false,
+        message: 'Invalid CSRF token',
+      });
+    }
   },
 
   // Refresh CSRF token (for AJAX requests)
-  refreshToken: (req, res, next) => {
-    if (!req.session) {
-      return res.status(500).json({
-        success: false,
-        message: "Session not available",
-      });
-    }
-
+  refreshToken: (req, res) => {
     // Generate new token
-    const newToken = crypto.randomBytes(32).toString("hex");
-    req.session.csrfToken = newToken;
+    const token = crypto.randomBytes(32).toString('hex');
+
+    const csrfPayload = {
+      token,
+      timestamp: Date.now(),
+      userAgent: req.headers['user-agent'] || 'unknown',
+      ip: req.ip || req.connection.remoteAddress,
+    };
+
+    const signedToken = jwt.sign(csrfPayload, config.JWT_SECRET, {
+      expiresIn: '1h',
+    });
 
     // Return new token in response
     res.json({
       success: true,
-      csrfToken: newToken,
+      csrfToken: signedToken,
     });
   },
 };
