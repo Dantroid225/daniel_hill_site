@@ -14,6 +14,12 @@ variable "domain_name" {
 }
 
 variable "cloudfront_domain_name" {
-  description = "CloudFront distribution domain name"
+  description = "CloudFront distribution domain name or ALB domain name"
   type        = string
+}
+
+variable "is_cloudfront" {
+  description = "Whether the domain name points to CloudFront (true) or ALB (false)"
+  type        = bool
+  default     = false
 } 

@@ -1,4 +1,5 @@
 resource "aws_security_group" "rds" {
+  count       = var.ec2_security_group_id != null ? 1 : 0
   name_prefix = "${var.project_name}-rds-"
   vpc_id      = var.vpc_id
 

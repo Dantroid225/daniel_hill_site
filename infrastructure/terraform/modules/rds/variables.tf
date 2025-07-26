@@ -45,6 +45,7 @@ variable "database_password" {
 variable "ec2_security_group_id" {
   description = "EC2 security group ID"
   type        = string
+  default     = null
 }
 
 variable "existing_db_identifier" {

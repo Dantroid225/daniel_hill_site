@@ -59,6 +59,7 @@ variable "public_key" {
 variable "certificate_arn" {
   description = "ACM certificate ARN"
   type        = string
+  default     = ""
 }
 
 variable "existing_db_identifier" {
