@@ -83,6 +83,7 @@ module "rds" {
   database_username = var.database_username
   database_password = var.database_password
   existing_db_identifier = var.existing_db_identifier
+  ec2_security_group_id = module.ec2.security_group_id
 }
 
 # EC2 Configuration
@@ -130,4 +131,8 @@ module "route53" {
   domain_name     = var.domain_name
   cloudfront_domain_name = module.ec2.alb_domain_name
   is_cloudfront   = false
+} 
+
+output "alb_domain_name" {
+  value = module.ec2.alb_domain_name
 } 

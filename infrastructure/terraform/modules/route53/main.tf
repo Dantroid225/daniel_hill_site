@@ -35,6 +35,19 @@ resource "aws_route53_record" "www" {
   }
 }
 
+# A record for api subdomain pointing to ALB
+resource "aws_route53_record" "api" {
+  zone_id = aws_route53_zone.main.zone_id
+  name    = "api.${var.domain_name}"
+  type    = "A"
+
+  alias {
+    name                   = var.cloudfront_domain_name
+    zone_id                = var.is_cloudfront ? "Z2FDTNDATAQYW2" : "Z35SXDOTRQ7X7K" # CloudFront or ALB zone ID
+    evaluate_target_health = false
+  }
+}
+
 # Outputs
 output "zone_id" {
   value = aws_route53_zone.main.zone_id
