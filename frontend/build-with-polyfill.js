@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
 // Load polyfill first
-const { webcrypto } = require('crypto');
+import { webcrypto } from 'crypto';
+import { execSync } from 'child_process';
 
 // Polyfill crypto.getRandomValues for Node.js v16
 if (typeof globalThis.crypto === 'undefined') {
@@ -16,8 +17,6 @@ if (!globalThis.crypto.getRandomValues) {
 console.log('Crypto polyfill loaded successfully');
 
 // Now run the build
-const { execSync } = require('child_process');
-
 try {
   console.log('Running TypeScript compilation...');
   execSync('tsc -b', { stdio: 'inherit' });
