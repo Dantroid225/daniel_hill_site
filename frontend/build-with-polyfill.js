@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 
-// Load polyfill first
+// Import the specific polyfill for crypto.getRandomValues
+import 'get-random-values';
+
+// Also load webcrypto as backup
 import { webcrypto } from 'crypto';
 import { execSync } from 'child_process';
 
@@ -14,7 +17,7 @@ if (!globalThis.crypto.getRandomValues) {
   globalThis.crypto.getRandomValues = webcrypto.getRandomValues;
 }
 
-console.log('Crypto polyfill loaded successfully');
+console.log('Crypto polyfill loaded successfully with get-random-values');
 
 // Now run the build with the polyfill preloaded
 try {
