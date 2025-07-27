@@ -16,6 +16,9 @@ export default defineConfig({
       '@assets': path.resolve(__dirname, './src/assets'),
     },
   },
+  define: {
+    global: 'globalThis',
+  },
   server: {
     port: 3000,
     proxy: {
