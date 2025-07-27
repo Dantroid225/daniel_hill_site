@@ -14,19 +14,10 @@ export default defineConfig({
       '@utils': path.resolve(__dirname, './src/utils'),
       '@types': path.resolve(__dirname, './src/types'),
       '@assets': path.resolve(__dirname, './src/assets'),
-      crypto: 'crypto-browserify',
     },
   },
   define: {
     global: 'globalThis',
-  },
-  optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom', 'framer-motion'],
-    esbuildOptions: {
-      define: {
-        global: 'globalThis',
-      },
-    },
   },
   server: {
     port: 3000,
@@ -51,6 +42,7 @@ export default defineConfig({
       },
     },
   },
-});
-
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-router-dom', 'framer-motion'],
+  },
 });
