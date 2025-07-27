@@ -53,8 +53,8 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
         technologies: Array.isArray(project.technologies)
           ? project.technologies
           : typeof project.technologies === 'string'
-            ? JSON.parse(project.technologies)
-            : [],
+          ? JSON.parse(project.technologies)
+          : [],
       });
       if (project.image_url) {
         setImagePreview(project.image_url);
@@ -103,7 +103,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
     submitFormData.append('display_order', formData.display_order.toString());
     submitFormData.append('status', formData.status);
     // Send featured as a proper boolean value (FormData will convert it correctly)
-    submitFormData.append('featured', formData.featured);
+    submitFormData.append('featured', formData.featured.toString());
     submitFormData.append(
       'technologies',
       JSON.stringify(formData.technologies)
@@ -364,8 +364,8 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
               {isSubmitting
                 ? 'Saving...'
                 : project
-                  ? 'Update Project'
-                  : 'Create Project'}
+                ? 'Update Project'
+                : 'Create Project'}
             </Button>
           </div>
         </form>

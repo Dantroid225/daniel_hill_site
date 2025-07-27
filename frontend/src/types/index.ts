@@ -13,22 +13,9 @@ export interface Project {
   description: string;
   imageUrl: string;
   technologies: string[];
-  githubUrl?: string;
-  liveUrl?: string;
+  githubUrl: string;
+  liveUrl: string;
   featured: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface BlogPost {
-  id: number;
-  title: string;
-  content: string;
-  excerpt: string;
-  imageUrl: string;
-  author: User;
-  tags: string[];
-  published: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -48,4 +35,4 @@ export interface ApiResponse<T> {
   message: string;
   data?: T;
   error?: string;
-} 
+}

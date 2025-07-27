@@ -13,7 +13,6 @@ const Header: React.FC = () => {
     { path: ROUTES.EXPERIENCE, label: 'Experience' },
     { path: ROUTES.PROJECTS, label: 'Projects' },
     { path: ROUTES.CONTACT, label: 'Contact' },
-    { path: ROUTES.BLOG, label: 'Blog' },
   ];
 
   return (

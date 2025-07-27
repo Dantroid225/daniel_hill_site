@@ -59,7 +59,7 @@ const AdminLoginPage: React.FC = () => {
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   required
-                  placeholder='admin@danielhill.dev'
+                  placeholder='email'
                 />
               </div>
 

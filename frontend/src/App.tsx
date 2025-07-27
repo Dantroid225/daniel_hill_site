@@ -5,7 +5,6 @@ import HomePage from './pages/home/HomePage';
 import ExperiencePage from './pages/experience/ExperiencePage';
 import ProjectsPage from './pages/projects/ProjectsPage';
 import ContactPage from './pages/contact/ContactPage';
-import BlogPage from './pages/blog/BlogPage';
 import AdminLoginPage from './pages/admin/AdminLoginPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import ProtectedAdminRoute from './components/auth/ProtectedAdminRoute';
@@ -47,14 +46,6 @@ function App() {
             element={
               <Layout>
                 <ContactPage />
-              </Layout>
-            }
-          />
-          <Route
-            path='/blog'
-            element={
-              <Layout>
-                <BlogPage />
               </Layout>
             }
           />
