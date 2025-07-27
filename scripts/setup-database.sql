@@ -27,21 +27,6 @@ CREATE TABLE projects (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- Create blog_posts table
-CREATE TABLE blog_posts (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    title VARCHAR(255) NOT NULL,
-    content TEXT NOT NULL,
-    excerpt TEXT,
-    image_url VARCHAR(500),
-    author_id INT,
-    tags JSON,
-    published BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (author_id) REFERENCES users(id)
-);
-
 -- Create contact_messages table
 CREATE TABLE contact_messages (
     id INT AUTO_INCREMENT PRIMARY KEY,

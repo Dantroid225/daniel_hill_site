@@ -291,7 +291,7 @@ The project uses a comprehensive design system with:
 - **About** - Personal information and skills
 - **Projects** - Portfolio showcase with filtering
 - **Contact** - Contact form with validation
-- **Blog** - Blog posts (placeholder)
+
 - **Admin** - Protected admin dashboard
 
 ## 🚀 Deployment

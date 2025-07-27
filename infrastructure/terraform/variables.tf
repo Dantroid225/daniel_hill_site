@@ -31,7 +31,7 @@ variable "ec2_instance_type" {
 variable "rds_instance_type" {
   description = "RDS instance type"
   type        = string
-  default     = "db.t3.micro"
+  default     = "db.t4g.micro"
 }
 
 variable "s3_bucket_name" {
