@@ -1,6 +1,6 @@
 const express = require('express');
 const { pool } = require('../config/database');
-// const { logMetric } = require('../config/cloudwatch'); // Temporarily disabled
+const { logMetric } = require('../config/cloudwatch');
 
 const router = express.Router();
 
@@ -10,8 +10,8 @@ router.get('/health', async (req, res) => {
     const connection = await pool.getConnection();
     connection.release();
 
-    // Log health check - temporarily disabled
-    // await logMetric('HealthCheck', 1);
+    // Log health check
+    await logMetric('HealthCheck', 1);
 
     res.json({
       status: 'healthy',
@@ -21,7 +21,7 @@ router.get('/health', async (req, res) => {
       database: 'connected',
     });
   } catch (error) {
-    // await logMetric('HealthCheckFailed', 1); // Temporarily disabled
+    await logMetric('HealthCheckFailed', 1);
     res.status(503).json({
       status: 'unhealthy',
       timestamp: new Date().toISOString(),
