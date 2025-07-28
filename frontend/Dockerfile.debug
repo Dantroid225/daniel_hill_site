@@ -1,33 +1,46 @@
-# Build stage for frontend with newer Node.js
+# Debug stage for frontend with better error handling
 FROM node:20-alpine AS builder
 
 # Set working directory
 WORKDIR /app
 
-# Install dependencies for native modules (if needed)
-RUN apk add --no-cache python3 make g++
+# Install dependencies for native modules
+RUN apk add --no-cache python3 make g++ curl
 
-# Copy package files first for better caching
+# Copy package files first
 COPY package*.json ./
 
-# Install dependencies with better error handling
-RUN npm cache clean --force && \
-    npm config set registry https://registry.npmjs.org/ && \
+# Step 1: Configure npm
+RUN npm config set registry https://registry.npmjs.org/ && \
     npm config set fetch-retries 3 && \
     npm config set fetch-retry-mintimeout 5000 && \
-    npm config set fetch-retry-maxtimeout 60000 && \
+    npm config set fetch-retry-maxtimeout 60000
+
+# Step 2: Test npm connectivity
+RUN npm ping
+
+# Step 3: Clean cache
+RUN npm cache clean --force
+
+# Step 4: Install dependencies step by step
+RUN echo "Starting npm install..." && \
     if [ -f package-lock.json ]; then \
-        echo "Using package-lock.json for installation" && \
+        echo "Found package-lock.json, using npm ci" && \
         npm ci --only=production=false --no-audit --no-fund --verbose; \
     else \
-        echo "No package-lock.json found, running npm install" && \
+        echo "No package-lock.json, using npm install" && \
         npm install --no-audit --no-fund --verbose; \
     fi
+
+# Step 5: Verify installation
+RUN echo "Verifying installation..." && \
+    ls -la node_modules/ && \
+    npm list --depth=0
 
 # Copy source code
 COPY . .
 
-# Build the application with environment variable
+# Build the application
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build
