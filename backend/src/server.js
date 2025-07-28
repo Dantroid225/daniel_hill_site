@@ -16,6 +16,9 @@ const emailService = require('./utils/emailService');
 const app = express();
 const PORT = config.PORT;
 
+// Trust proxy configuration for rate limiting behind reverse proxy
+app.set('trust proxy', 1);
+
 // Session configuration
 app.use(
   session({
@@ -94,9 +97,9 @@ app.use(helmet(helmetConfig));
 // CORS configuration - Fixed to be more secure
 const corsOptions = {
   origin: function (origin, callback) {
-    // In production, reject requests with no origin
-    if (config.NODE_ENV === 'production' && !origin) {
-      return callback(new Error('Not allowed by CORS - no origin'));
+    // Allow requests with no origin (same-origin requests)
+    if (!origin) {
+      return callback(null, true);
     }
 
     const allowedOrigins =
@@ -111,7 +114,7 @@ const corsOptions = {
             'http://127.0.0.1:4173',
           ];
 
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+    if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
       console.warn(`CORS blocked origin: ${origin}`);
