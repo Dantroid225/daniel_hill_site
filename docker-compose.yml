@@ -55,8 +55,8 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - SESSION_SECRET=${SESSION_SECRET}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
-      - DB_SSL_CA=/etc/ssl/certs/global-bundle.pem
-      - DB_SSL_MODE=VERIFY_IDENTITY
+      - DB_SSL_CA=${DB_SSL_CA:-/etc/ssl/certs/global-bundle.pem}
+      - DB_SSL_MODE=${DB_SSL_MODE:-VERIFY_IDENTITY}
     volumes:
       - ./backend/uploads:/app/uploads
       - ./backend/logs:/app/logs
