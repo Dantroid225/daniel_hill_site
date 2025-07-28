@@ -10,7 +10,11 @@ echo "Copying EC2 certificate store for Docker build..."
 # Remove existing certs directory if it exists
 if [ -d "certs" ]; then
     echo "Removing existing certs directory..."
-    rm -rf certs
+    # Try to remove with elevated permissions if needed
+    if ! rm -rf certs 2>/dev/null; then
+        echo "Permission denied, trying with sudo..."
+        sudo rm -rf certs
+    fi
 fi
 
 # Create fresh certs directory
