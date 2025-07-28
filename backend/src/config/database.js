@@ -15,7 +15,7 @@ const dbConfig = {
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  // SSL configuration for RDS - use proper AWS RDS CA certificate
+  // SSL configuration for RDS - use AWS RDS CA certificate
   ssl: {
     rejectUnauthorized: true,
     ca: fs.readFileSync(path.join(__dirname, '../../rds-ca-2019-root.pem')),
