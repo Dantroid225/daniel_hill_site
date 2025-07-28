@@ -17,8 +17,8 @@ const getSSLConfig = () => {
     };
   }
 
-  // Otherwise, use the system's certificate store (which is mounted in Docker)
-  console.log('Using system SSL certificate store');
+  // Use the system's certificate store (copied from EC2 during build)
+  console.log('Using EC2 certificate store (copied during build)');
   return {
     ssl: {
       rejectUnauthorized: true,

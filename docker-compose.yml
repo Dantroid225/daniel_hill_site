@@ -44,7 +44,6 @@ services:
     volumes:
       - ./backend/uploads:/app/uploads
       - ./backend/logs:/app/logs
-      - /etc/ssl/certs:/etc/ssl/certs:ro
     networks:
       - app-network
     healthcheck:
