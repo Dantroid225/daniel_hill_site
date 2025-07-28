@@ -8,8 +8,8 @@ RUN apk add --no-cache curl ca-certificates openssl mysql-client
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies (will work with or without package-lock.json)
-RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
+# Install dependencies
+RUN npm ci --only=production
 
 # Copy source code
 COPY . .
