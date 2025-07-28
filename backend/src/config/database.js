@@ -1,28 +1,14 @@
 const mysql = require('mysql2/promise');
 const { getConfig } = require('./environment');
-const fs = require('fs');
 
 const config = getConfig();
 
 // Function to check if SSL certificate exists and configure SSL
 const getSSLConfig = () => {
-  // If DB_SSL_CA is explicitly set, use that file
-  if (config.DB_SSL_CA && fs.existsSync(config.DB_SSL_CA)) {
-    console.log(`SSL certificate found at: ${config.DB_SSL_CA}`);
-    return {
-      ssl: {
-        ca: fs.readFileSync(config.DB_SSL_CA),
-        rejectUnauthorized: true,
-      },
-    };
-  }
-
-  // Use the system's certificate store (copied from EC2 during build)
-  console.log('Using EC2 certificate store (copied during build)');
+  // For now, disable SSL to resolve connection issues
+  console.log('SSL disabled for database connection');
   return {
-    ssl: {
-      rejectUnauthorized: true,
-    },
+    ssl: false,
   };
 };
 
@@ -46,8 +32,7 @@ console.log('Database config:', {
   user: dbConfig.user,
   database: dbConfig.database,
   port: dbConfig.port,
-  ssl: dbConfig.ssl ? 'enabled with system certificates' : 'disabled',
-  sslCertPath: config.DB_SSL_CA || 'system certificate store',
+  ssl: 'disabled',
 });
 
 const pool = mysql.createPool(dbConfig);
