@@ -6,18 +6,69 @@ const path = require('path');
 // Get validated environment configuration
 const config = getConfig();
 
-// Read and validate the certificate
-const certificatePath = path.join(__dirname, '../../rds-ca-2019-root.pem');
-console.log('Certificate path:', certificatePath);
-console.log('Certificate exists:', fs.existsSync(certificatePath));
+// SSL Configuration - use environment variables if available, fallback to hardcoded path
+let sslConfig = null;
 
-// Use AWS RDS CA certificate with proper SSL configuration
-const sslConfig = {
-  rejectUnauthorized: true,
-  ca: fs.readFileSync(certificatePath),
-  // Remove checkServerIdentity to allow proper hostname verification
-};
-console.log('Using AWS RDS CA certificate with VERIFY_CA mode');
+// Check if SSL environment variables are set (from docker-compose)
+if (process.env.DB_SSL_CA && process.env.DB_SSL_MODE) {
+  console.log('Using SSL configuration from environment variables');
+  console.log('SSL CA path:', process.env.DB_SSL_CA);
+  console.log('SSL mode:', process.env.DB_SSL_MODE);
+
+  try {
+    // Check if the certificate file exists
+    if (fs.existsSync(process.env.DB_SSL_CA)) {
+      sslConfig = {
+        rejectUnauthorized: process.env.DB_SSL_MODE === 'VERIFY_IDENTITY',
+        ca: fs.readFileSync(process.env.DB_SSL_CA),
+      };
+      console.log('SSL certificate loaded successfully from environment path');
+    } else {
+      console.warn('SSL certificate file not found at:', process.env.DB_SSL_CA);
+    }
+  } catch (error) {
+    console.error(
+      'Error loading SSL certificate from environment path:',
+      error.message
+    );
+  }
+}
+
+// Fallback to hardcoded path if environment variables are not set or certificate not found
+if (!sslConfig) {
+  const certificatePath = path.join(__dirname, '../../rds-ca-2019-root.pem');
+  console.log('Falling back to hardcoded certificate path:', certificatePath);
+
+  try {
+    if (fs.existsSync(certificatePath)) {
+      sslConfig = {
+        rejectUnauthorized: true,
+        ca: fs.readFileSync(certificatePath),
+      };
+      console.log('SSL certificate loaded successfully from fallback path');
+    } else {
+      console.warn(
+        'SSL certificate file not found at fallback path:',
+        certificatePath
+      );
+    }
+  } catch (error) {
+    console.error(
+      'Error loading SSL certificate from fallback path:',
+      error.message
+    );
+  }
+}
+
+// If no SSL config is available, log a warning but continue without SSL
+if (!sslConfig) {
+  console.warn(
+    'No SSL certificate found. Database connection will not use SSL verification.'
+  );
+  console.warn(
+    'This may cause SSL certificate errors when connecting to AWS RDS.'
+  );
+}
 
 const dbConfig = {
   host: config.DB_HOST,
@@ -28,8 +79,8 @@ const dbConfig = {
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  // SSL configuration for RDS - equivalent to VERIFY_CA mode
-  ssl: sslConfig,
+  // SSL configuration for RDS - only add if sslConfig is available
+  ...(sslConfig && { ssl: sslConfig }),
   // Additional connection options for RDS
   connectTimeout: 60000,
   acquireTimeout: 60000,
@@ -41,6 +92,7 @@ console.log('Database config:', {
   user: dbConfig.user,
   database: dbConfig.database,
   port: dbConfig.port,
+  ssl: sslConfig ? 'enabled' : 'disabled',
 });
 
 const pool = mysql.createPool(dbConfig);
