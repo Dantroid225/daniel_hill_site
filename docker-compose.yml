@@ -40,7 +40,6 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - SESSION_SECRET=${SESSION_SECRET}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
-      - DB_SSL_MODE=VERIFY_CA
     volumes:
       - ./backend/uploads:/app/uploads
       - ./backend/logs:/app/logs

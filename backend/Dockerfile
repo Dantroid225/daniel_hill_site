@@ -17,10 +17,10 @@ COPY backend/scripts/ ./scripts/
 COPY backend/eslint.config.js ./
 COPY backend/jest.config.js ./
 
-# Copy EC2's certificate store into the container
-COPY certs/ /etc/ssl/certs/
-RUN echo "EC2 certificates copied to container" && \
-    ls -la /etc/ssl/certs/ | head -10
+# Copy EC2's certificate store into the container (temporarily disabled)
+# COPY certs/ /etc/ssl/certs/
+# RUN echo "EC2 certificates copied to container" && \
+#     ls -la /etc/ssl/certs/ | head -10
 
 # Create uploads directory
 RUN mkdir -p uploads
