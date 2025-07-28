@@ -23,6 +23,22 @@ resource "aws_security_group" "rds" {
   }
 }
 
+# Add ingress rule to existing RDS security group
+resource "aws_security_group_rule" "rds_ec2_access" {
+  count = var.ec2_security_group_id != null ? 1 : 0
+  
+  type                     = "ingress"
+  from_port                = 3306
+  to_port                  = 3306
+  protocol                 = "tcp"
+  source_security_group_id = var.ec2_security_group_id
+  
+  # Reference the existing RDS security group
+  security_group_id = data.aws_db_instance.existing.vpc_security_groups[0]
+  
+  description = "Allow EC2 access to RDS"
+}
+
 resource "aws_db_subnet_group" "main" {
   name       = "${var.project_name}-db-subnet-group"
   subnet_ids = var.subnet_ids
