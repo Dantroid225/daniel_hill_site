@@ -14,7 +14,6 @@ RUN npm install
 # Copy backend source code only
 COPY backend/src/ ./src/
 COPY backend/scripts/ ./scripts/
-COPY backend/.env ./
 COPY backend/eslint.config.js ./
 COPY backend/jest.config.js ./
 
