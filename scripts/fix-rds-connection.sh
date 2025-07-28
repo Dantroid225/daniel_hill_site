@@ -47,11 +47,11 @@ echo "  RDS Security Group ID: $RDS_SG_ID"
 echo "🔍 Checking existing ingress rules..."
 EXISTING_RULE=$(aws ec2 describe-security-groups \
   --group-ids $RDS_SG_ID \
-  --query "SecurityGroups[0].IpPermissions[?FromPort==\`3306\`].ReferencedGroupIds" \
+  --query "SecurityGroups[0].IpPermissions[?FromPort==\`3306\` && contains(ReferencedGroupIds, \`$EC2_SG_ID\`)].FromPort" \
   --output text \
-  --region $EC2_REGION 2>/dev/null | grep -q "$EC2_SG_ID" && echo "exists" || echo "")
+  --region $EC2_REGION 2>/dev/null)
 
-if [ -z "$EXISTING_RULE" ]; then
+if [ -z "$EXISTING_RULE" ] || [ "$EXISTING_RULE" = "None" ]; then
     echo "❌ No ingress rule found for EC2 security group in RDS security group"
     echo "🔧 Adding ingress rule..."
     
@@ -64,7 +64,7 @@ if [ -z "$EXISTING_RULE" ]; then
     
     echo "✅ Ingress rule added successfully"
 else
-    echo "✅ Ingress rule already exists"
+    echo "✅ Ingress rule already exists (port $EXISTING_RULE)"
 fi
 
 # Test the connection

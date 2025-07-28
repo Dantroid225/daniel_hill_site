@@ -24,7 +24,7 @@ sudo chown ec2-user:ec2-user /opt/dh-portfolio
 # Configure environment variables
 cat > /opt/dh-portfolio/.env << EOF
 DB_HOST=${RDS_ENDPOINT}
-DB_USER=admin
+DB_USER=fradmin
 DB_PASSWORD=${DB_PASSWORD}
 DB_NAME=dh_portfolio_db
 JWT_SECRET=${JWT_SECRET}
