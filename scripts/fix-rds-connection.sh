@@ -47,9 +47,9 @@ echo "  RDS Security Group ID: $RDS_SG_ID"
 echo "🔍 Checking existing ingress rules..."
 EXISTING_RULE=$(aws ec2 describe-security-groups \
   --group-ids $RDS_SG_ID \
-  --query "SecurityGroups[0].IpPermissions[?FromPort==\`3306\` && contains(ReferencedGroupIds, \`$EC2_SG_ID\`)]" \
+  --query "SecurityGroups[0].IpPermissions[?FromPort==\`3306\`].ReferencedGroupIds" \
   --output text \
-  --region $EC2_REGION)
+  --region $EC2_REGION 2>/dev/null | grep -q "$EC2_SG_ID" && echo "exists" || echo "")
 
 if [ -z "$EXISTING_RULE" ]; then
     echo "❌ No ingress rule found for EC2 security group in RDS security group"
