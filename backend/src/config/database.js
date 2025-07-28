@@ -6,23 +6,24 @@ const config = getConfig();
 
 // Function to check if SSL certificate exists and configure SSL
 const getSSLConfig = () => {
-  const sslCertPath = config.DB_SSL_CA || '/etc/ssl/certs/ca-certificates.crt';
-
-  // Check if SSL certificate file exists
-  if (fs.existsSync(sslCertPath)) {
-    console.log(`SSL certificate found at: ${sslCertPath}`);
+  // If DB_SSL_CA is explicitly set, use that file
+  if (config.DB_SSL_CA && fs.existsSync(config.DB_SSL_CA)) {
+    console.log(`SSL certificate found at: ${config.DB_SSL_CA}`);
     return {
       ssl: {
-        ca: fs.readFileSync(sslCertPath),
+        ca: fs.readFileSync(config.DB_SSL_CA),
         rejectUnauthorized: true,
       },
     };
-  } else {
-    console.log(
-      `SSL certificate not found at: ${sslCertPath}, SSL will be disabled`
-    );
-    return { ssl: false };
   }
+
+  // Otherwise, use the system's certificate store (which is mounted in Docker)
+  console.log('Using system SSL certificate store');
+  return {
+    ssl: {
+      rejectUnauthorized: true,
+    },
+  };
 };
 
 const dbConfig = {
@@ -45,8 +46,8 @@ console.log('Database config:', {
   user: dbConfig.user,
   database: dbConfig.database,
   port: dbConfig.port,
-  ssl: dbConfig.ssl ? 'enabled with certificate' : 'disabled',
-  sslCertPath: config.DB_SSL_CA || '/etc/ssl/certs/ca-certificates.crt',
+  ssl: dbConfig.ssl ? 'enabled with system certificates' : 'disabled',
+  sslCertPath: config.DB_SSL_CA || 'system certificate store',
 });
 
 const pool = mysql.createPool(dbConfig);
