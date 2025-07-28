@@ -14,14 +14,15 @@ RUN npm install
 # Copy source code
 COPY . .
 
+# TEMPORARILY DISABLE CERTIFICATE DOWNLOAD FOR TESTING
 # Download AWS RDS CA certificate bundle (correct URL)
-RUN curl -o rds-ca-2019-root.pem https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem && \
-    ls -la rds-ca-2019-root.pem && \
-    echo "Certificate downloaded successfully" && \
-    head -5 rds-ca-2019-root.pem && \
-    # Verify certificate integrity
-    openssl crl2pkcs7 -nocrl -certfile rds-ca-2019-root.pem | openssl pkcs7 -print_certs > /dev/null 2>&1 && \
-    echo "Certificate verification passed"
+# RUN curl -o rds-ca-2019-root.pem https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem && \
+#     ls -la rds-ca-2019-root.pem && \
+#     echo "Certificate downloaded successfully" && \
+#     head -5 rds-ca-2019-root.pem && \
+#     # Verify certificate integrity
+#     openssl crl2pkcs7 -nocrl -certfile rds-ca-2019-root.pem | openssl pkcs7 -print_certs > /dev/null 2>&1 && \
+#     echo "Certificate verification passed"
 
 # Create uploads directory
 RUN mkdir -p uploads
