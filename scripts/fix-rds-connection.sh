@@ -60,7 +60,7 @@ echo "📋 Step 2: Get RDS database information"
 echo "======================================="
 
 # Get RDS instance details
-RDS_IDENTIFIER="dhwebsite"
+RDS_IDENTIFIER="dhsite"
 RDS_ENDPOINT=$(aws rds describe-db-instances --db-instance-identifier $RDS_IDENTIFIER --query 'DBInstances[0].Endpoint.Address' --output text 2>/dev/null || echo "dhwebsite.cmfum4mqgoci.us-east-1.rds.amazonaws.com")
 print_status "RDS Endpoint: $RDS_ENDPOINT"
 

@@ -1,7 +1,29 @@
 const mysql = require('mysql2/promise');
 const { getConfig } = require('./environment');
+const fs = require('fs');
 
 const config = getConfig();
+
+// Function to check if SSL certificate exists and configure SSL
+const getSSLConfig = () => {
+  const sslCertPath = config.DB_SSL_CA || '/etc/ssl/certs/ca-certificates.crt';
+
+  // Check if SSL certificate file exists
+  if (fs.existsSync(sslCertPath)) {
+    console.log(`SSL certificate found at: ${sslCertPath}`);
+    return {
+      ssl: {
+        ca: fs.readFileSync(sslCertPath),
+        rejectUnauthorized: true,
+      },
+    };
+  } else {
+    console.log(
+      `SSL certificate not found at: ${sslCertPath}, SSL will be disabled`
+    );
+    return { ssl: false };
+  }
+};
 
 const dbConfig = {
   host: config.DB_HOST,
@@ -12,12 +34,10 @@ const dbConfig = {
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  // Explicitly disable SSL
-  ssl: false,
-  // Connection timeouts
+  // Configure SSL based on certificate availability
+  ...getSSLConfig(),
+  // Connection timeout (MySQL2 compatible)
   connectTimeout: 60000,
-  acquireTimeout: 60000,
-  timeout: 60000,
 };
 
 console.log('Database config:', {
@@ -25,7 +45,8 @@ console.log('Database config:', {
   user: dbConfig.user,
   database: dbConfig.database,
   port: dbConfig.port,
-  ssl: 'disabled',
+  ssl: dbConfig.ssl ? 'enabled with certificate' : 'disabled',
+  sslCertPath: config.DB_SSL_CA || '/etc/ssl/certs/ca-certificates.crt',
 });
 
 const pool = mysql.createPool(dbConfig);

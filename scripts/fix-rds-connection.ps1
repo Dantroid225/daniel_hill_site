@@ -64,16 +64,16 @@ Write-Host "📋 Step 2: Get RDS database information" -ForegroundColor Cyan
 Write-Host "=======================================" -ForegroundColor Cyan
 
 # Get RDS instance details
-$RDSIdentifier = "dhwebsite"
+$RDSIdentifier = "dhsite"
 try {
     $RDSEndpoint = aws rds describe-db-instances --db-instance-identifier $RDSIdentifier --query 'DBInstances[0].Endpoint.Address' --output text 2>$null
     if (-not $RDSEndpoint) {
-        $RDSEndpoint = "dhwebsite.cmfum4mqgoci.us-east-1.rds.amazonaws.com"
+        $RDSEndpoint = "dhsite.cmfum4mqgoci.us-east-1.rds.amazonaws.com"
     }
     Write-Status "RDS Endpoint: $RDSEndpoint"
 } catch {
     Write-Warning "Could not get RDS endpoint, using default"
-    $RDSEndpoint = "dhwebsite.cmfum4mqgoci.us-east-1.rds.amazonaws.com"
+    $RDSEndpoint = "dhsite.cmfum4mqgoci.us-east-1.rds.amazonaws.com"
 }
 
 # Get RDS security group
