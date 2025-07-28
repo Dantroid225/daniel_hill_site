@@ -6,13 +6,13 @@ WORKDIR /app
 RUN apk add --no-cache curl ca-certificates openssl mysql-client
 
 # Copy package files
-COPY package*.json ./
+COPY backend/package*.json ./
 
 # Install dependencies
 RUN npm install
 
 # Copy source code
-COPY . .
+COPY backend/ .
 
 # Copy EC2's certificate store into the container
 COPY certs/ /etc/ssl/certs/
