@@ -7,7 +7,13 @@ set -e
 
 echo "Copying EC2 certificate store for Docker build..."
 
-# Create certs directory if it doesn't exist
+# Remove existing certs directory if it exists
+if [ -d "certs" ]; then
+    echo "Removing existing certs directory..."
+    rm -rf certs
+fi
+
+# Create fresh certs directory
 mkdir -p certs
 
 # Copy the entire certificate store from EC2
