@@ -6,6 +6,19 @@ const path = require('path');
 // Get validated environment configuration
 const config = getConfig();
 
+// Read and validate the certificate
+const certificatePath = path.join(__dirname, '../../rds-ca-2019-root.pem');
+console.log('Certificate path:', certificatePath);
+console.log('Certificate exists:', fs.existsSync(certificatePath));
+
+// Use AWS RDS CA certificate
+const sslConfig = {
+  rejectUnauthorized: true,
+  ca: fs.readFileSync(certificatePath),
+  checkServerIdentity: () => undefined, // Skip hostname verification
+};
+console.log('Using AWS RDS CA certificate');
+
 const dbConfig = {
   host: config.DB_HOST,
   user: config.DB_USER,
@@ -15,11 +28,8 @@ const dbConfig = {
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  // SSL configuration for RDS - use AWS RDS CA certificate
-  ssl: {
-    rejectUnauthorized: true,
-    ca: fs.readFileSync(path.join(__dirname, '../../rds-ca-2019-root.pem')),
-  },
+  // SSL configuration for RDS
+  ssl: sslConfig,
   // Additional connection options for RDS
   connectTimeout: 60000,
   acquireTimeout: 60000,
