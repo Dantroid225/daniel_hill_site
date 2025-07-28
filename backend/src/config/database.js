@@ -18,7 +18,7 @@ const dbConfig = {
   // SSL configuration for RDS - use proper AWS RDS CA certificate
   ssl: {
     rejectUnauthorized: true,
-    ca: fs.readFileSync(path.join(__dirname, '../rds-ca-2019-root.pem')),
+    ca: fs.readFileSync(path.join(__dirname, '../../rds-ca-2019-root.pem')),
   },
   // Additional connection options for RDS
   connectTimeout: 60000,
