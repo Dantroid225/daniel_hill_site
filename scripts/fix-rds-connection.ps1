@@ -1,180 +1,89 @@
-# PowerShell script to fix RDS connection issues on EC2
-# This script helps troubleshoot and fix database connection problems
+# PowerShell script to fix RDS connection issues
+param(
+    [string]$RdsEndpoint = "dhsite.cmfum4mqgoci.us-east-1.rds.amazonaws.com",
+    [string]$RdsInstanceId = "dhsite",
+    [string]$Region = "us-east-1"
+)
 
-Write-Host "🔍 Checking RDS connection issues..." -ForegroundColor Green
+Write-Host "🔍 Diagnosing RDS connection issue..." -ForegroundColor Green
 
-# Function to print colored output
-function Write-Status {
-    param([string]$Message)
-    Write-Host "✅ $Message" -ForegroundColor Green
-}
-
-function Write-Warning {
-    param([string]$Message)
-    Write-Host "⚠️  $Message" -ForegroundColor Yellow
-}
-
-function Write-Error {
-    param([string]$Message)
-    Write-Host "❌ $Message" -ForegroundColor Red
-}
-
-# Check if AWS CLI is installed
 try {
-    aws --version | Out-Null
-    Write-Status "AWS CLI is installed"
+    # Get EC2 instance metadata
+    $InstanceId = Invoke-RestMethod -Uri "http://169.254.169.254/latest/meta-data/instance-id" -TimeoutSec 5
+    $InstanceRegion = Invoke-RestMethod -Uri "http://169.254.169.254/latest/meta-data/placement/region" -TimeoutSec 5
+    $SecurityGroups = Invoke-RestMethod -Uri "http://169.254.169.254/latest/meta-data/security-groups" -TimeoutSec 5
+    $Ec2SecurityGroup = $SecurityGroups.Split("`n")[0]
+
+    Write-Host "📋 EC2 Instance Info:" -ForegroundColor Yellow
+    Write-Host "  Instance ID: $InstanceId"
+    Write-Host "  Region: $InstanceRegion"
+    Write-Host "  Security Group: $Ec2SecurityGroup"
 } catch {
-    Write-Error "AWS CLI is not installed. Please install it first."
+    Write-Host "⚠️  Could not get EC2 metadata. Running in local mode." -ForegroundColor Yellow
+    $InstanceRegion = $Region
+}
+
+Write-Host "📋 RDS Instance Info:" -ForegroundColor Yellow
+Write-Host "  Endpoint: $RdsEndpoint"
+Write-Host "  Instance ID: $RdsInstanceId"
+
+# Get EC2 security group ID
+Write-Host "🔍 Getting EC2 security group ID..." -ForegroundColor Green
+try {
+    $Ec2SgId = aws ec2 describe-security-groups --filters "Name=group-name,Values=*$Ec2SecurityGroup*" --query 'SecurityGroups[0].GroupId' --output text --region $InstanceRegion
+    Write-Host "  EC2 Security Group ID: $Ec2SgId"
+} catch {
+    Write-Host "❌ Could not get EC2 security group ID" -ForegroundColor Red
     exit 1
 }
 
-Write-Host ""
-Write-Host "📋 Step 1: Get current EC2 instance information" -ForegroundColor Cyan
-Write-Host "================================================" -ForegroundColor Cyan
-
-# Get EC2 instance ID
+# Get RDS security group ID
+Write-Host "🔍 Getting RDS security group ID..." -ForegroundColor Green
 try {
-    $InstanceId = Invoke-RestMethod -Uri "http://169.254.169.254/latest/meta-data/instance-id" -TimeoutSec 5
-    Write-Status "EC2 Instance ID: $InstanceId"
+    $RdsSgId = aws rds describe-db-instances --db-instance-identifier $RdsInstanceId --query 'DBInstances[0].VpcSecurityGroups[0].VpcSecurityGroupId' --output text --region $InstanceRegion
+    Write-Host "  RDS Security Group ID: $RdsSgId"
 } catch {
-    Write-Warning "Could not get EC2 instance ID. This script is designed to run on EC2."
-    $InstanceId = "unknown"
+    Write-Host "❌ Could not get RDS security group ID" -ForegroundColor Red
+    exit 1
 }
 
-# Get EC2 security group
+# Check if ingress rule exists
+Write-Host "🔍 Checking existing ingress rules..." -ForegroundColor Green
 try {
-    $EC2SG = aws ec2 describe-instances --instance-ids $InstanceId --query 'Reservations[0].Instances[0].SecurityGroups[0].GroupId' --output text 2>$null
-    Write-Status "EC2 Security Group: $EC2SG"
-} catch {
-    Write-Warning "Could not get EC2 security group"
-    $EC2SG = "unknown"
-}
-
-# Get VPC ID
-try {
-    $VPCId = aws ec2 describe-instances --instance-ids $InstanceId --query 'Reservations[0].Instances[0].VpcId' --output text 2>$null
-    Write-Status "VPC ID: $VPCId"
-} catch {
-    Write-Warning "Could not get VPC ID"
-    $VPCId = "unknown"
-}
-
-Write-Host ""
-Write-Host "📋 Step 2: Get RDS database information" -ForegroundColor Cyan
-Write-Host "=======================================" -ForegroundColor Cyan
-
-# Get RDS instance details
-$RDSIdentifier = "dhsite"
-try {
-    $RDSEndpoint = aws rds describe-db-instances --db-instance-identifier $RDSIdentifier --query 'DBInstances[0].Endpoint.Address' --output text 2>$null
-    if (-not $RDSEndpoint) {
-        $RDSEndpoint = "dhsite.cmfum4mqgoci.us-east-1.rds.amazonaws.com"
-    }
-    Write-Status "RDS Endpoint: $RDSEndpoint"
-} catch {
-    Write-Warning "Could not get RDS endpoint, using default"
-    $RDSEndpoint = "dhsite.cmfum4mqgoci.us-east-1.rds.amazonaws.com"
-}
-
-# Get RDS security group
-try {
-    $RDSSG = aws rds describe-db-instances --db-instance-identifier $RDSIdentifier --query 'DBInstances[0].VpcSecurityGroups[0].VpcSecurityGroupId' --output text 2>$null
-    Write-Status "RDS Security Group: $RDSSG"
-} catch {
-    Write-Warning "Could not get RDS security group"
-    $RDSSG = "unknown"
-}
-
-Write-Host ""
-Write-Host "📋 Step 3: Check security group rules" -ForegroundColor Cyan
-Write-Host "=====================================" -ForegroundColor Cyan
-
-# Check EC2 security group egress rules
-Write-Host "EC2 Security Group Egress Rules:" -ForegroundColor Yellow
-try {
-    aws ec2 describe-security-groups --group-ids $EC2SG --query 'SecurityGroups[0].IpPermissionsEgress' --output table
-} catch {
-    Write-Warning "Could not retrieve EC2 security group rules"
-}
-
-Write-Host ""
-Write-Host "RDS Security Group Ingress Rules:" -ForegroundColor Yellow
-try {
-    aws ec2 describe-security-groups --group-ids $RDSSG --query 'SecurityGroups[0].IpPermissions' --output table
-} catch {
-    Write-Warning "Could not retrieve RDS security group rules"
-}
-
-Write-Host ""
-Write-Host "📋 Step 4: Test database connectivity" -ForegroundColor Cyan
-Write-Host "=====================================" -ForegroundColor Cyan
-
-# Test if we can reach the database port
-Write-Host "Testing connection to $RDSEndpoint`:3306..." -ForegroundColor Yellow
-try {
-    $tcpClient = New-Object System.Net.Sockets.TcpClient
-    $tcpClient.ConnectAsync($RDSEndpoint, 3306).Wait(5000) | Out-Null
-    if ($tcpClient.Connected) {
-        Write-Status "Port 3306 is reachable"
-        $tcpClient.Close()
+    $ExistingRule = aws ec2 describe-security-groups --group-ids $RdsSgId --query "SecurityGroups[0].IpPermissions[?FromPort==\`3306\` && contains(ReferencedGroupIds, \`$Ec2SgId\`)]" --output text --region $InstanceRegion
+    
+    if ([string]::IsNullOrEmpty($ExistingRule)) {
+        Write-Host "❌ No ingress rule found for EC2 security group in RDS security group" -ForegroundColor Red
+        Write-Host "🔧 Adding ingress rule..." -ForegroundColor Yellow
+        
+        aws ec2 authorize-security-group-ingress --group-id $RdsSgId --protocol tcp --port 3306 --source-group $Ec2SgId --region $InstanceRegion
+        
+        Write-Host "✅ Ingress rule added successfully" -ForegroundColor Green
     } else {
-        Write-Error "Cannot reach port 3306"
+        Write-Host "✅ Ingress rule already exists" -ForegroundColor Green
     }
 } catch {
-    Write-Error "Cannot reach port 3306: $($_.Exception.Message)"
+    Write-Host "❌ Error checking/adding ingress rules" -ForegroundColor Red
+    Write-Host $_.Exception.Message
 }
 
-Write-Host ""
-Write-Host "📋 Step 5: Manual fix commands" -ForegroundColor Cyan
-Write-Host "==============================" -ForegroundColor Cyan
+# Test the connection
+Write-Host "🧪 Testing database connection..." -ForegroundColor Green
+Write-Host "💡 Please enter the database password when prompted:" -ForegroundColor Yellow
 
-Write-Host "If the RDS security group doesn't allow traffic from EC2, run these commands:" -ForegroundColor Yellow
-Write-Host ""
-Write-Host "# Add EC2 security group to RDS security group ingress rules" -ForegroundColor Gray
-Write-Host "aws ec2 authorize-security-group-ingress \`" -ForegroundColor Gray
-Write-Host "  --group-id $RDSSG \`" -ForegroundColor Gray
-Write-Host "  --protocol tcp \`" -ForegroundColor Gray
-Write-Host "  --port 3306 \`" -ForegroundColor Gray
-Write-Host "  --source-group $EC2SG" -ForegroundColor Gray
-Write-Host ""
-Write-Host "# Verify the rule was added" -ForegroundColor Gray
-Write-Host "aws ec2 describe-security-groups --group-ids $RDSSG --query 'SecurityGroups[0].IpPermissions' --output table" -ForegroundColor Gray
-Write-Host ""
-
-Write-Host "📋 Step 6: Environment variables check" -ForegroundColor Cyan
-Write-Host "=====================================" -ForegroundColor Cyan
-
-# Check if .env file exists and has database configuration
-$EnvPath = "/opt/dh-portfolio/daniel_hill_site/backend/.env"
-if (Test-Path $EnvPath) {
-    Write-Status ".env file found"
-    Write-Host "Database configuration in .env:" -ForegroundColor Yellow
-    try {
-        Get-Content $EnvPath | Select-String -Pattern "DB_HOST|DB_USER|DB_PASSWORD|DB_NAME|DB_PORT"
-    } catch {
-        Write-Warning "Could not read .env file"
-    }
-} else {
-    Write-Error ".env file not found at $EnvPath"
+try {
+    # Note: This would require mysql client to be installed
+    # For now, just provide instructions
+    Write-Host "To test the connection manually, run:" -ForegroundColor Cyan
+    Write-Host "mysql -h $RdsEndpoint -u admin -p -P 3306 dhsite -e 'SELECT 1 as test;'" -ForegroundColor White
+} catch {
+    Write-Host "❌ Could not test database connection" -ForegroundColor Red
 }
 
-Write-Host ""
-Write-Host "📋 Step 7: Application logs check" -ForegroundColor Cyan
-Write-Host "=================================" -ForegroundColor Cyan
+Write-Host "💡 Additional troubleshooting steps:" -ForegroundColor Yellow
+Write-Host "  1. Check if the 'admin' user exists in the database"
+Write-Host "  2. Verify the password is correct"
+Write-Host "  3. Check if the user has proper permissions"
+Write-Host "  4. Verify the database name 'dhsite' exists"
 
-$DockerComposePath = "/opt/dh-portfolio/docker-compose.yml"
-if (Test-Path $DockerComposePath) {
-    Write-Status "Docker Compose found"
-    Write-Host "Recent application logs:" -ForegroundColor Yellow
-    try {
-        Set-Location "/opt/dh-portfolio"
-        docker-compose logs --tail=20 backend 2>$null
-    } catch {
-        Write-Warning "Could not retrieve logs"
-    }
-} else {
-    Write-Warning "Docker Compose not found at $DockerComposePath"
-}
-
-Write-Host ""
-Write-Status "Script completed. Check the output above for issues and apply the suggested fixes." 
+Write-Host "🎉 RDS connection fix script completed!" -ForegroundColor Green 

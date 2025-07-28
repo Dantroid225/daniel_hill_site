@@ -1,137 +1,83 @@
 #!/bin/bash
 
-# Script to fix RDS connection issues on EC2
-# This script helps troubleshoot and fix database connection problems
-
+# Script to fix RDS connection issues
 set -e
 
-echo "🔍 Checking RDS connection issues..."
+echo "🔍 Diagnosing RDS connection issue..."
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+# Get EC2 instance metadata
+EC2_INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
+EC2_REGION=$(curl -s http://169.254.169.254/latest/meta-data/placement/region)
+EC2_SECURITY_GROUP=$(curl -s http://169.254.169.254/latest/meta-data/security-groups | head -1)
 
-# Function to print colored output
-print_status() {
-    echo -e "${GREEN}✅ $1${NC}"
-}
+echo "📋 EC2 Instance Info:"
+echo "  Instance ID: $EC2_INSTANCE_ID"
+echo "  Region: $EC2_REGION"
+echo "  Security Group: $EC2_SECURITY_GROUP"
 
-print_warning() {
-    echo -e "${YELLOW}⚠️  $1${NC}"
-}
+# Get RDS instance info
+RDS_ENDPOINT="dhsite.cmfum4mqgoci.us-east-1.rds.amazonaws.com"
+RDS_INSTANCE_ID="dhsite"
 
-print_error() {
-    echo -e "${RED}❌ $1${NC}"
-}
+echo "📋 RDS Instance Info:"
+echo "  Endpoint: $RDS_ENDPOINT"
+echo "  Instance ID: $RDS_INSTANCE_ID"
 
-# Check if AWS CLI is installed
-if ! command -v aws &> /dev/null; then
-    print_error "AWS CLI is not installed. Please install it first."
-    exit 1
-fi
+# Get EC2 security group ID
+echo "🔍 Getting EC2 security group ID..."
+EC2_SG_ID=$(aws ec2 describe-security-groups \
+  --filters "Name=group-name,Values=*$EC2_SECURITY_GROUP*" \
+  --query 'SecurityGroups[0].GroupId' \
+  --output text \
+  --region $EC2_REGION)
 
-# Check if we're on EC2
-if [ -f /sys/hypervisor/uuid ] && [ "$(head -c 3 /sys/hypervisor/uuid)" = "ec2" ]; then
-    print_status "Running on EC2 instance"
+echo "  EC2 Security Group ID: $EC2_SG_ID"
+
+# Get RDS security group ID
+echo "🔍 Getting RDS security group ID..."
+RDS_SG_ID=$(aws rds describe-db-instances \
+  --db-instance-identifier $RDS_INSTANCE_ID \
+  --query 'DBInstances[0].VpcSecurityGroups[0].VpcSecurityGroupId' \
+  --output text \
+  --region $EC2_REGION)
+
+echo "  RDS Security Group ID: $RDS_SG_ID"
+
+# Check if ingress rule exists
+echo "🔍 Checking existing ingress rules..."
+EXISTING_RULE=$(aws ec2 describe-security-groups \
+  --group-ids $RDS_SG_ID \
+  --query "SecurityGroups[0].IpPermissions[?FromPort==\`3306\` && contains(ReferencedGroupIds, \`$EC2_SG_ID\`)]" \
+  --output text \
+  --region $EC2_REGION)
+
+if [ -z "$EXISTING_RULE" ]; then
+    echo "❌ No ingress rule found for EC2 security group in RDS security group"
+    echo "🔧 Adding ingress rule..."
+    
+    aws ec2 authorize-security-group-ingress \
+      --group-id $RDS_SG_ID \
+      --protocol tcp \
+      --port 3306 \
+      --source-group $EC2_SG_ID \
+      --region $EC2_REGION
+    
+    echo "✅ Ingress rule added successfully"
 else
-    print_warning "This script is designed to run on EC2. Some checks may not work locally."
+    echo "✅ Ingress rule already exists"
 fi
 
-echo ""
-echo "📋 Step 1: Get current EC2 instance information"
-echo "================================================"
-
-# Get EC2 instance ID
-INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
-print_status "EC2 Instance ID: $INSTANCE_ID"
-
-# Get EC2 security group
-EC2_SG=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID --query 'Reservations[0].Instances[0].SecurityGroups[0].GroupId' --output text)
-print_status "EC2 Security Group: $EC2_SG"
-
-# Get VPC ID
-VPC_ID=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID --query 'Reservations[0].Instances[0].VpcId' --output text)
-print_status "VPC ID: $VPC_ID"
-
-echo ""
-echo "📋 Step 2: Get RDS database information"
-echo "======================================="
-
-# Get RDS instance details
-RDS_IDENTIFIER="dhsite"
-RDS_ENDPOINT=$(aws rds describe-db-instances --db-instance-identifier $RDS_IDENTIFIER --query 'DBInstances[0].Endpoint.Address' --output text 2>/dev/null || echo "dhwebsite.cmfum4mqgoci.us-east-1.rds.amazonaws.com")
-print_status "RDS Endpoint: $RDS_ENDPOINT"
-
-# Get RDS security group
-RDS_SG=$(aws rds describe-db-instances --db-instance-identifier $RDS_IDENTIFIER --query 'DBInstances[0].VpcSecurityGroups[0].VpcSecurityGroupId' --output text 2>/dev/null || echo "Unknown")
-print_status "RDS Security Group: $RDS_SG"
-
-echo ""
-echo "📋 Step 3: Check security group rules"
-echo "====================================="
-
-# Check EC2 security group egress rules
-echo "EC2 Security Group Egress Rules:"
-aws ec2 describe-security-groups --group-ids $EC2_SG --query 'SecurityGroups[0].IpPermissionsEgress' --output table
-
-echo ""
-echo "RDS Security Group Ingress Rules:"
-aws ec2 describe-security-groups --group-ids $RDS_SG --query 'SecurityGroups[0].IpPermissions' --output table
-
-echo ""
-echo "📋 Step 4: Test database connectivity"
-echo "====================================="
-
-# Test if we can reach the database port
-if command -v telnet &> /dev/null; then
-    echo "Testing connection to $RDS_ENDPOINT:3306..."
-    timeout 5 telnet $RDS_ENDPOINT 3306 && print_status "Port 3306 is reachable" || print_error "Cannot reach port 3306"
+# Test the connection
+echo "🧪 Testing database connection..."
+if mysql -h $RDS_ENDPOINT -u admin -p -P 3306 dhsite -e "SELECT 1 as test;" 2>/dev/null; then
+    echo "✅ Database connection successful!"
 else
-    print_warning "telnet not available, skipping port test"
+    echo "❌ Database connection still failing"
+    echo "💡 Additional troubleshooting steps:"
+    echo "  1. Check if the 'admin' user exists in the database"
+    echo "  2. Verify the password is correct"
+    echo "  3. Check if the user has proper permissions"
+    echo "  4. Verify the database name 'dhsite' exists"
 fi
 
-echo ""
-echo "📋 Step 5: Manual fix commands"
-echo "=============================="
-
-echo "If the RDS security group doesn't allow traffic from EC2, run these commands:"
-echo ""
-echo "# Add EC2 security group to RDS security group ingress rules"
-echo "aws ec2 authorize-security-group-ingress \\"
-echo "  --group-id $RDS_SG \\"
-echo "  --protocol tcp \\"
-echo "  --port 3306 \\"
-echo "  --source-group $EC2_SG"
-echo ""
-echo "# Verify the rule was added"
-echo "aws ec2 describe-security-groups --group-ids $RDS_SG --query 'SecurityGroups[0].IpPermissions' --output table"
-echo ""
-
-echo "📋 Step 6: Environment variables check"
-echo "====================================="
-
-# Check if .env file exists and has database configuration
-if [ -f "/opt/dh-portfolio/daniel_hill_site/backend/.env" ]; then
-    print_status ".env file found"
-    echo "Database configuration in .env:"
-    grep -E "DB_HOST|DB_USER|DB_PASSWORD|DB_NAME|DB_PORT" /opt/dh-portfolio/daniel_hill_site/backend/.env || print_warning "No database configuration found in .env"
-else
-    print_error ".env file not found at /opt/dh-portfolio/daniel_hill_site/backend/.env"
-fi
-
-echo ""
-echo "📋 Step 7: Application logs check"
-echo "================================="
-
-if [ -f "/opt/dh-portfolio/docker-compose.yml" ]; then
-    print_status "Docker Compose found"
-    echo "Recent application logs:"
-    cd /opt/dh-portfolio && docker-compose logs --tail=20 backend 2>/dev/null || print_warning "Could not retrieve logs"
-else
-    print_warning "Docker Compose not found at /opt/dh-portfolio/docker-compose.yml"
-fi
-
-echo ""
-print_status "Script completed. Check the output above for issues and apply the suggested fixes." 
+echo "🎉 RDS connection fix script completed!" 
