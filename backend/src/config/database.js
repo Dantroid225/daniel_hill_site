@@ -83,8 +83,8 @@ const dbConfig = {
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  // SSL configuration for RDS - only add if sslConfig is available
-  // ...(sslConfig && { ssl: sslConfig }),
+  // Explicitly disable SSL for testing
+  ssl: false,
   // Additional connection options for RDS
   connectTimeout: 60000,
   acquireTimeout: 60000,
@@ -96,7 +96,7 @@ console.log('Database config:', {
   user: dbConfig.user,
   database: dbConfig.database,
   port: dbConfig.port,
-  ssl: 'disabled for testing',
+  ssl: 'explicitly disabled',
 });
 
 const pool = mysql.createPool(dbConfig);
