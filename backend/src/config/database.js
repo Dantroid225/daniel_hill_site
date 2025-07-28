@@ -1,5 +1,7 @@
 const mysql = require('mysql2/promise');
 const { getConfig } = require('./environment');
+const fs = require('fs');
+const path = require('path');
 
 // Get validated environment configuration
 const config = getConfig();
@@ -13,9 +15,10 @@ const dbConfig = {
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  // SSL configuration for RDS - simplified approach
+  // SSL configuration for RDS - use proper AWS RDS CA certificate
   ssl: {
-    rejectUnauthorized: false, // Temporarily disable SSL verification for testing
+    rejectUnauthorized: true,
+    ca: fs.readFileSync(path.join(__dirname, '../rds-ca-2019-root.pem')),
   },
   // Additional connection options for RDS
   connectTimeout: 60000,
