@@ -1,7 +1,5 @@
 const mysql = require('mysql2/promise');
 const { getConfig } = require('./environment');
-const fs = require('fs');
-const path = require('path');
 
 // Get validated environment configuration
 const config = getConfig();
@@ -13,15 +11,18 @@ console.log('DB_SSL_MODE:', process.env.DB_SSL_MODE);
 console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('=====================================');
 
-// SSL Configuration - use environment variables if available, fallback to hardcoded path
-let sslConfig = null;
+// TEMPORARILY DISABLE SSL FOR TESTING
+console.log('SSL temporarily disabled for testing basic connection');
+const sslConfig = null;
 
-// Check if SSL environment variables are set (from docker-compose)
+// SSL Configuration - use environment variables if available, fallback to hardcoded path
+// DISABLED FOR TESTING
+/*
 if (process.env.DB_SSL_CA && process.env.DB_SSL_MODE) {
   console.log('Using SSL configuration from environment variables');
   console.log('SSL CA path:', process.env.DB_SSL_CA);
   console.log('SSL mode:', process.env.DB_SSL_MODE);
-
+ 
   try {
     // Check if the certificate file exists
     if (fs.existsSync(process.env.DB_SSL_CA)) {
@@ -45,7 +46,7 @@ if (process.env.DB_SSL_CA && process.env.DB_SSL_MODE) {
 if (!sslConfig) {
   const certificatePath = path.join(__dirname, '../../rds-ca-2019-root.pem');
   console.log('Falling back to hardcoded certificate path:', certificatePath);
-
+ 
   try {
     if (fs.existsSync(certificatePath)) {
       sslConfig = {
@@ -66,16 +67,11 @@ if (!sslConfig) {
     );
   }
 }
+*/
 
 // If no SSL config is available, log a warning but continue without SSL
 if (!sslConfig) {
-  console.warn(
-    'No SSL certificate found. Database connection will not use SSL verification.'
-  );
-  console.warn(
-    'This may cause SSL certificate errors when connecting to AWS RDS.'
-  );
-  console.log('Proceeding without SSL for testing purposes...');
+  console.log('SSL disabled for testing - proceeding without SSL verification');
 }
 
 const dbConfig = {
@@ -88,7 +84,7 @@ const dbConfig = {
   connectionLimit: 10,
   queueLimit: 0,
   // SSL configuration for RDS - only add if sslConfig is available
-  ...(sslConfig && { ssl: sslConfig }),
+  // ...(sslConfig && { ssl: sslConfig }),
   // Additional connection options for RDS
   connectTimeout: 60000,
   acquireTimeout: 60000,
@@ -100,7 +96,7 @@ console.log('Database config:', {
   user: dbConfig.user,
   database: dbConfig.database,
   port: dbConfig.port,
-  ssl: sslConfig ? 'enabled' : 'disabled',
+  ssl: 'disabled for testing',
 });
 
 const pool = mysql.createPool(dbConfig);
