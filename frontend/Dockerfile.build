@@ -4,8 +4,11 @@ FROM node:20-alpine AS builder
 # Set working directory
 WORKDIR /app
 
-# Install dependencies for native modules (if needed)
-RUN apk add --no-cache python3 make g++
+# Install dependencies for native modules with better error handling
+RUN apk update && \
+    apk add --no-cache --virtual .build-deps python3 make g++ || \
+    apk add --no-cache python3 make g++ || \
+    echo "Warning: Some build dependencies may not be available"
 
 # Copy package files first for better caching
 COPY package*.json ./
@@ -18,10 +21,10 @@ RUN npm cache clean --force && \
     npm config set fetch-retry-maxtimeout 60000 && \
     if [ -f package-lock.json ]; then \
         echo "Using package-lock.json for installation" && \
-        npm ci --only=production=false --no-audit --no-fund --verbose; \
+        npm ci --only=production=false --no-audit --no-fund; \
     else \
         echo "No package-lock.json found, running npm install" && \
-        npm install --no-audit --no-fund --verbose; \
+        npm install --no-audit --no-fund; \
     fi
 
 # Copy source code
