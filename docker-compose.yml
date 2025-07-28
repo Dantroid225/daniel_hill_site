@@ -4,20 +4,30 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.build # Use the improved build Dockerfile
+    container_name: dh-portfolio-frontend
+    restart: unless-stopped
     ports:
-      - '80:80'
-    depends_on:
-      - backend
+      - '3000:80'
     environment:
-      - VITE_API_URL=/api
+      - NODE_ENV=production
+      - VITE_API_URL=/
     networks:
       - app-network
+    depends_on:
+      - backend
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    container_name: dh-portfolio-backend
+    restart: unless-stopped
     ports:
       - '5000:5000'
     environment:
@@ -32,8 +42,14 @@ services:
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
     volumes:
       - ./backend/uploads:/app/uploads
+      - ./backend/logs:/app/logs
     networks:
       - app-network
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:5000/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 networks:
   app-network:

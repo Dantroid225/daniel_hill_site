@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  frontend-dev:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:5000/api
+    networks:
+      - app-network
+    command: npm run dev
+
+  backend-dev:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    ports:
+      - '5000:5000'
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - ./backend/uploads:/app/uploads
+    environment:
+      - NODE_ENV=development
+      - DB_HOST=database
+      - DB_USER=dbuser
+      - DB_PASSWORD=dbpassword
+      - DB_NAME=dh_portfolio
+      - DB_PORT=3306
+      - JWT_SECRET=dev-jwt-secret-key-for-development-only
+      - SESSION_SECRET=dev-session-secret-key-for-development-only
+      - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5000
+    depends_on:
+      - database
+    networks:
+      - app-network
+    command: npm run dev
+
+  database:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: dh_portfolio
+      MYSQL_USER: dbuser
+      MYSQL_PASSWORD: dbpassword
+    ports:
+      - '3306:3306'
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./scripts/setup-database.sql:/docker-entrypoint-initdb.d/setup-database.sql
+    networks:
+      - app-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    ports:
+      - '8080:80'
+    environment:
+      PMA_HOST: database
+      PMA_USER: dbuser
+      PMA_PASSWORD: dbpassword
+    depends_on:
+      - database
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  db_data:

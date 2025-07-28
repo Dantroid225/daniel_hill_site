@@ -14,8 +14,6 @@ export default defineConfig({
       '@utils': path.resolve(__dirname, './src/utils'),
       '@types': path.resolve(__dirname, './src/types'),
       '@assets': path.resolve(__dirname, './src/assets'),
-      crypto: 'crypto-browserify',
-      stream: 'stream-browserify',
     },
   },
   define: {
@@ -34,6 +32,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
+    target: 'esnext',
     rollupOptions: {
       output: {
         manualChunks: {

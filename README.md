@@ -101,9 +101,68 @@ daniel_hill_site/
 
 ## 🚀 Deployment
 
+### Docker Deployment (Recommended)
+
+This project includes comprehensive Docker support for easy deployment and development.
+
+#### Quick Start with Docker
+
+1. **Prerequisites**
+
+   - Docker and Docker Compose installed
+   - Access to the project repository
+   - Database credentials (if using external database)
+
+2. **Deploy with Docker Compose**
+
+   ```bash
+   # Clone and setup
+   git clone <repository-url>
+   cd daniel_hill_site
+
+   # Configure environment
+   cp backend/env.example backend/.env
+   # Edit backend/.env with your values
+
+   # Deploy
+   docker-compose up -d --build
+   ```
+
+3. **Access the application**
+
+   - Frontend: http://localhost:80
+   - Backend API: http://localhost:5000
+
+#### Detailed Docker Guide
+
+See [Docker Deployment Guide](docs/docker-deployment-guide.md) for comprehensive Docker deployment instructions.
+
+#### AWS Production Deployment
+
+For AWS-specific deployment, see:
+
+- [AWS Production Setup Guide](docs/aws-production-setup.md) - Complete step-by-step guide
+- [AWS Deployment Quick Reference](docs/aws-deployment-quick-reference.md) - Quick commands and troubleshooting
+
+#### Development with Docker
+
+```bash
+# Start development environment
+docker-compose -f docker-compose.dev.yml up -d
+
+# Access development services
+# Frontend: http://localhost:3000
+# Backend: http://localhost:5000
+# PhpMyAdmin: http://localhost:8080
+```
+
+#### Docker Quick Reference
+
+See [Docker Quick Reference](docs/docker-quick-reference.md) for common Docker commands and workflows.
+
 ### AWS Deployment
 
-This project includes comprehensive AWS deployment configuration using Terraform, Docker, and GitHub Actions.
+This project also includes comprehensive AWS deployment configuration using Terraform, Docker, and GitHub Actions.
 
 #### Quick Start
 
@@ -133,7 +192,7 @@ This project includes comprehensive AWS deployment configuration using Terraform
 
 #### Detailed Guide
 
-See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for a comprehensive deployment guide.
+See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for a comprehensive AWS deployment guide.
 
 #### Infrastructure Components
 
