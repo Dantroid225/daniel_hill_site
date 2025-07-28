@@ -10,8 +10,15 @@ RUN apk add --no-cache python3 make g++
 # Copy package files first for better caching
 COPY package*.json ./
 
-# Install dependencies (will work with or without package-lock.json)
-RUN if [ -f package-lock.json ]; then npm ci --only=production=false; else npm install; fi
+# Install dependencies with better error handling
+RUN npm cache clean --force && \
+    if [ -f package-lock.json ]; then \
+        echo "Using package-lock.json for installation" && \
+        npm ci --only=production=false --no-audit --no-fund; \
+    else \
+        echo "No package-lock.json found, running npm install" && \
+        npm install --no-audit --no-fund; \
+    fi
 
 # Copy source code
 COPY . .

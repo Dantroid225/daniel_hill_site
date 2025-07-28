@@ -2,7 +2,6 @@
   "name": "dh-portfolio-frontend",
   "version": "1.0.0",
   "description": "Frontend for DH Portfolio Website",
-  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
