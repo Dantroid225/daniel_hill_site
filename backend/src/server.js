@@ -200,25 +200,90 @@ app.use((err, req, res, _next) => {
   }
 });
 
-// Start server
+// Start server with database retry logic
 const startServer = async () => {
-  try {
-    await connectDB();
+  let dbConnected = false;
+  let retryCount = 0;
+  const maxRetries = 10;
+  const retryDelay = 5000; // 5 seconds
 
-    // Initialize email service
-    await emailService.initialize();
+  // Function to attempt database connection
+  const attemptDBConnection = async () => {
+    try {
+      await connectDB();
+      dbConnected = true;
+      console.log('✅ Database connected successfully');
+      return true;
+    } catch (error) {
+      console.error(
+        `❌ Database connection attempt ${retryCount + 1} failed:`,
+        error.message
+      );
+      return false;
+    }
+  };
 
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-      console.log(`Test endpoint: http://localhost:${PORT}/test`);
-      console.log(`Health check: http://localhost:${PORT}/health`);
-      console.log(`API base: http://localhost:${PORT}/api`);
-      console.log(`Email service status:`, emailService.getStatus());
-    });
-  } catch (error) {
-    console.error('Failed to start server:', error);
-    process.exit(1);
+  // Start the server even if database connection fails
+  const server = app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📝 Test endpoint: http://localhost:${PORT}/test`);
+    console.log(`🏥 Health check: http://localhost:${PORT}/health`);
+    console.log(`🔗 API base: http://localhost:${PORT}/api`);
+
+    if (!dbConnected) {
+      console.log(
+        '⚠️  Server started without database connection - will retry in background'
+      );
+    }
+  });
+
+  // Try to connect to database with retries
+  while (!dbConnected && retryCount < maxRetries) {
+    if (await attemptDBConnection()) {
+      break;
+    }
+    retryCount++;
+    if (retryCount < maxRetries) {
+      console.log(
+        `⏳ Retrying database connection in ${
+          retryDelay / 1000
+        } seconds... (${retryCount}/${maxRetries})`
+      );
+      await new Promise(resolve => setTimeout(resolve, retryDelay));
+    }
   }
+
+  if (!dbConnected) {
+    console.log(
+      '⚠️  Server running without database connection. Database-dependent features will not work.'
+    );
+    console.log('💡 Check database configuration and network connectivity.');
+  } else {
+    // Initialize email service only if database is connected
+    try {
+      await emailService.initialize();
+      console.log(`📧 Email service status:`, emailService.getStatus());
+    } catch (error) {
+      console.error('⚠️  Email service initialization failed:', error.message);
+    }
+  }
+
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    console.log('🛑 Received SIGTERM, shutting down gracefully...');
+    server.close(() => {
+      console.log('✅ Server closed');
+      process.exit(0);
+    });
+  });
+
+  process.on('SIGINT', () => {
+    console.log('🛑 Received SIGINT, shutting down gracefully...');
+    server.close(() => {
+      console.log('✅ Server closed');
+      process.exit(0);
+    });
+  });
 };
 
 startServer();
