@@ -1,6 +1,21 @@
 version: '3.8'
 
 services:
+  # Certificate download service
+  cert-downloader:
+    image: alpine
+    volumes:
+      - ./certs:/certs
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        apk add --no-cache curl &&
+        curl -o /certs/global-bundle.pem https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem &&
+        chmod 644 /certs/*.pem &&
+        echo "Certificate bundle downloaded successfully"
+    restart: 'no'
+
   frontend:
     build:
       context: ./frontend
@@ -40,9 +55,14 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - SESSION_SECRET=${SESSION_SECRET}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+      - DB_SSL_CA=/etc/ssl/certs/global-bundle.pem
+      - DB_SSL_MODE=VERIFY_IDENTITY
     volumes:
       - ./backend/uploads:/app/uploads
       - ./backend/logs:/app/logs
+      - ./certs:/etc/ssl/certs:ro
+    depends_on:
+      - cert-downloader
     networks:
       - app-network
     healthcheck:

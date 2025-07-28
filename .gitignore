@@ -7,6 +7,9 @@ node_modules/
 *.pem
 *.key
 
+# SSL certificates
+certs/
+
 # Terraform files with sensitive data
 terraform.tfvars
 *.tfvars
