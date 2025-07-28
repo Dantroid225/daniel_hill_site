@@ -1,29 +1,11 @@
-resource "aws_security_group" "rds" {
-  count       = var.ec2_security_group_id != null ? 1 : 0
-  name_prefix = "${var.project_name}-rds-"
-  vpc_id      = var.vpc_id
 
-  ingress {
-    from_port       = 3306
-    to_port         = 3306
-    protocol        = "tcp"
-    security_groups = [var.ec2_security_group_id]
-  }
 
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name        = "${var.project_name}-rds-sg"
-    Environment = var.environment
-  }
+# Reference existing RDS database (read-only)
+data "aws_db_instance" "existing" {
+  db_instance_identifier = var.existing_db_identifier
 }
 
-# Add ingress rule to existing RDS security group
+# Add ingress rule to existing RDS security group only if EC2 security group is provided
 resource "aws_security_group_rule" "rds_ec2_access" {
   count = var.ec2_security_group_id != null ? 1 : 0
   
@@ -47,11 +29,6 @@ resource "aws_db_subnet_group" "main" {
     Name        = "${var.project_name}-db-subnet-group"
     Environment = var.environment
   }
-}
-
-# Reference existing RDS database (read-only)
-data "aws_db_instance" "existing" {
-  db_instance_identifier = var.existing_db_identifier
 }
 
 output "db_endpoint" {
