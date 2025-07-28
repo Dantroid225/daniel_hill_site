@@ -6,6 +6,13 @@ const path = require('path');
 // Get validated environment configuration
 const config = getConfig();
 
+// Debug: Log all SSL-related environment variables
+console.log('=== SSL Environment Variables Debug ===');
+console.log('DB_SSL_CA:', process.env.DB_SSL_CA);
+console.log('DB_SSL_MODE:', process.env.DB_SSL_MODE);
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('=====================================');
+
 // SSL Configuration - use environment variables if available, fallback to hardcoded path
 let sslConfig = null;
 
@@ -68,6 +75,7 @@ if (!sslConfig) {
   console.warn(
     'This may cause SSL certificate errors when connecting to AWS RDS.'
   );
+  console.log('Proceeding without SSL for testing purposes...');
 }
 
 const dbConfig = {
