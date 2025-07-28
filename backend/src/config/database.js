@@ -13,6 +13,26 @@ const dbConfig = {
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
+  // SSL configuration for RDS - use proper certificates
+  ssl: {
+    rejectUnauthorized: true, // Verify SSL certificates
+    // Try to use system CA certificates, fallback to AWS RDS CA if needed
+    ca: (() => {
+      try {
+        return require('fs').readFileSync('/etc/ssl/certs/ca-certificates.crt');
+      } catch (error) {
+        console.log(
+          'System CA certificates not found, using AWS RDS CA certificate'
+        );
+        // You can download the AWS RDS CA certificate and include it in your project
+        return require('fs').readFileSync('/app/rds-ca-2019-root.pem');
+      }
+    })(),
+  },
+  // Additional connection options for RDS
+  connectTimeout: 60000,
+  acquireTimeout: 60000,
+  timeout: 60000,
 };
 
 console.log('Database config:', {

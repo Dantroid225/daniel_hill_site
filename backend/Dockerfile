@@ -11,6 +11,9 @@ RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 # Copy source code
 COPY . .
 
+# Download AWS RDS CA certificate
+RUN curl -o rds-ca-2019-root.pem https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
+
 # Create uploads directory
 RUN mkdir -p uploads
 
