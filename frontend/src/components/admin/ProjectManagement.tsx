@@ -31,7 +31,7 @@ const ProjectManagement: React.FC = () => {
 
   const fetchProjects = async () => {
     try {
-      const response = await api.get('/api/admin/portfolio');
+      const response = await api.get('/admin/portfolio');
       setProjects(response.data.data);
     } catch (error) {
       console.error('Failed to fetch projects:', error);
@@ -48,7 +48,7 @@ const ProjectManagement: React.FC = () => {
       )
     ) {
       try {
-        await api.delete(`/api/admin/portfolio/${projectId}`);
+        await api.delete(`/admin/portfolio/${projectId}`);
         setProjects(projects.filter(p => p.id !== projectId));
         // Show success message (you could add a success state if needed)
         console.log('Project deleted successfully');
@@ -61,7 +61,7 @@ const ProjectManagement: React.FC = () => {
 
   const handleToggleFeatured = async (projectId: number) => {
     try {
-      await api.put(`/api/admin/portfolio/${projectId}/featured`);
+      await api.put(`/admin/portfolio/${projectId}/featured`);
       setProjects(
         projects.map(p =>
           p.id === projectId ? { ...p, featured: !p.featured } : p
@@ -75,7 +75,7 @@ const ProjectManagement: React.FC = () => {
 
   const handleStatusChange = async (projectId: number, status: string) => {
     try {
-      await api.put(`/api/admin/portfolio/${projectId}/status`, { status });
+      await api.put(`/admin/portfolio/${projectId}/status`, { status });
       setProjects(
         projects.map(p =>
           p.id === projectId
@@ -106,21 +106,17 @@ const ProjectManagement: React.FC = () => {
     try {
       if (editingProject) {
         // Update existing project
-        await api.put(
-          `/api/admin/portfolio/${editingProject.id}`,
-          projectData,
-          {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            },
-          }
-        );
+        await api.put(`/admin/portfolio/${editingProject.id}`, projectData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
 
         // Refresh the projects list to get updated data
         await fetchProjects();
       } else {
         // Create new project
-        await api.post('/api/admin/portfolio', projectData, {
+        await api.post('/admin/portfolio', projectData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
@@ -196,8 +192,8 @@ const ProjectManagement: React.FC = () => {
                             project.status === 'published'
                               ? 'bg-green-100 text-green-800'
                               : project.status === 'draft'
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : 'bg-gray-100 text-gray-800'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-gray-100 text-gray-800'
                           }`}
                         >
                           {project.status}

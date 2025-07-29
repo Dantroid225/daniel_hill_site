@@ -42,7 +42,7 @@ export const AdminAuthProvider: React.FC<{ children: ReactNode }> = ({
 
   const checkAuthStatus = async () => {
     try {
-      const response = await api.get('/api/admin/profile');
+      const response = await api.get('/admin/profile');
       setAdmin(response.data.data);
     } catch (error) {
       console.error('Admin auth check failed:', error);
@@ -54,7 +54,7 @@ export const AdminAuthProvider: React.FC<{ children: ReactNode }> = ({
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const response = await api.post('/api/admin/login', { email, password });
+      const response = await api.post('/admin/login', { email, password });
       const { token, user } = response.data.data;
 
       localStorage.setItem('adminToken', token);
@@ -76,7 +76,7 @@ export const AdminAuthProvider: React.FC<{ children: ReactNode }> = ({
     newPassword: string
   ): Promise<boolean> => {
     try {
-      await api.put('/api/admin/change-password', {
+      await api.put('/admin/change-password', {
         currentPassword,
         newPassword,
       });

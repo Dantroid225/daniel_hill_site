@@ -19,11 +19,8 @@ let csrfToken: string | null = null;
 const getCSRFToken = async (): Promise<string> => {
   if (!csrfToken) {
     try {
-      console.log(
-        '🔄 Fetching CSRF token from:',
-        `${API_BASE_URL}/api/csrf-token`
-      );
-      const response = await axios.get(`${API_BASE_URL}/api/csrf-token`);
+      console.log('🔄 Fetching CSRF token from:', `${API_BASE_URL}/csrf-token`);
+      const response = await axios.get(`${API_BASE_URL}/csrf-token`);
       csrfToken = response.data.csrfToken;
       console.log(
         '✅ CSRF token received:',
@@ -48,7 +45,7 @@ api.interceptors.request.use(
     const adminToken = localStorage.getItem('adminToken');
 
     // Use admin token for admin routes, regular token for other routes
-    if (adminToken && config.url?.includes('/api/admin')) {
+    if (adminToken && config.url?.includes('/admin')) {
       config.headers.Authorization = `Bearer ${adminToken}`;
     } else if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -85,7 +82,7 @@ api.interceptors.response.use(
   error => {
     if (error.response?.status === 401) {
       // Check if it's an admin route
-      if (error.config.url?.includes('/api/admin')) {
+      if (error.config.url?.includes('/admin')) {
         localStorage.removeItem('adminToken');
         window.location.href = '/admin/login';
       } else {
@@ -102,11 +99,8 @@ export const portfolioApi = {
   // Get all published portfolio items
   getAllProjects: async (): Promise<Project[]> => {
     try {
-      console.log(
-        'Fetching all projects from:',
-        `${API_BASE_URL}/api/portfolio`
-      );
-      const response = await api.get('/api/portfolio');
+      console.log('Fetching all projects from:', `${API_BASE_URL}/portfolio`);
+      const response = await api.get('/portfolio');
       console.log('API Response:', response.data);
 
       if (!response.data.success) {
@@ -156,9 +150,9 @@ export const portfolioApi = {
     try {
       console.log(
         'Fetching featured projects from:',
-        `${API_BASE_URL}/api/portfolio`
+        `${API_BASE_URL}/portfolio`
       );
-      const response = await api.get('/api/portfolio');
+      const response = await api.get('/portfolio');
       console.log('API Response for featured projects:', response.data);
 
       if (!response.data.success) {
@@ -213,7 +207,7 @@ export const portfolioApi = {
   getProjectById: async (id: number): Promise<Project> => {
     try {
       console.log('Fetching project by ID:', id);
-      const response = await api.get(`/api/portfolio/${id}`);
+      const response = await api.get(`/portfolio/${id}`);
 
       if (!response.data.success) {
         throw new Error(response.data.message || 'Failed to fetch project');

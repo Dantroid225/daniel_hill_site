@@ -66,7 +66,7 @@ const ContactForm: React.FC = () => {
 
     setLoading(true);
     try {
-      const response = await api.post('/api/contact/submit', formData);
+      const response = await api.post('/contact/submit', formData);
       if (response.data.success) {
         setSuccess(true);
         setFormData({ name: '', email: '', subject: '', message: '' });
