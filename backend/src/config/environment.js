@@ -112,8 +112,25 @@ const environmentConfig = {
     },
     AWS_REGION: {
       default: 'us-east-1',
-      description: 'AWS region for CloudWatch',
+      description: 'AWS region for S3 and CloudWatch',
       validate: value => value && value.length > 0,
+    },
+    AWS_ACCESS_KEY_ID: {
+      description: 'AWS access key ID for S3 access',
+      validate: value => !value || value.length > 0,
+    },
+    AWS_SECRET_ACCESS_KEY: {
+      description: 'AWS secret access key for S3 access',
+      validate: value => !value || value.length > 0,
+    },
+    S3_BUCKET_NAME: {
+      default: 'dh-portfolio-assets',
+      description: 'S3 bucket name for file storage',
+      validate: value => !value || value.length > 0,
+    },
+    CLOUDFRONT_DOMAIN: {
+      description: 'CloudFront distribution domain for CDN',
+      validate: value => !value || value.length > 0,
     },
   },
 };

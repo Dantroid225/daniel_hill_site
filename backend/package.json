@@ -9,6 +9,7 @@
     "setup": "node scripts/setup-admin.js",
     "update-sample-data": "node scripts/update-sample-data.js",
     "setup-stored-procedures": "node scripts/setup-stored-procedures.js",
+    "migrate-images-to-s3": "node scripts/migrate-images-to-s3.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",

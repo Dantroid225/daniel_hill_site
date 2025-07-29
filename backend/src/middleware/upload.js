@@ -1,27 +1,15 @@
-const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
-const sharp = require("sharp");
-const { validateFileUpload } = require("../utils/validation");
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+const sharp = require('sharp');
+const { validateFileUpload } = require('../utils/validation');
+const S3Service = require('../utils/s3Service');
+const { getConfig } = require('../config/environment');
 
-// Ensure upload directory exists
-const uploadDir = path.join(__dirname, "../../uploads/images");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
+const config = getConfig();
 
-// Configure storage
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    // Generate unique filename with timestamp and random string
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname).toLowerCase();
-    cb(null, file.fieldname + "-" + uniqueSuffix + ext);
-  },
-});
+// Configure storage - using memory storage for S3 uploads
+const storage = multer.memoryStorage();
 
 // File filter for security
 const fileFilter = (req, file, cb) => {
@@ -35,7 +23,7 @@ const fileFilter = (req, file, cb) => {
   if (mimetype && extname) {
     return cb(null, true);
   } else {
-    cb(new Error("Only image files (jpeg, jpg, png, gif, webp) are allowed!"));
+    cb(new Error('Only image files (jpeg, jpg, png, gif, webp) are allowed!'));
   }
 };
 
@@ -49,8 +37,69 @@ const upload = multer({
   fileFilter: fileFilter,
 });
 
-// Middleware to process and optimize uploaded images
-const processImage = async (req, res, next) => {
+// Middleware to process and upload images to S3
+const processAndUploadImage = async (req, res, next) => {
+  if (!req.file) {
+    return next();
+  }
+
+  // Additional validation using our validation utilities
+  const fileValidation = validateFileUpload(req.file);
+  if (!fileValidation.isValid) {
+    return res.status(400).json({
+      success: false,
+      message: 'File validation failed',
+      errors: fileValidation.errors,
+    });
+  }
+
+  try {
+    // Process image with Sharp
+    const processedBuffer = await sharp(req.file.buffer)
+      .resize(1200, 800, {
+        fit: 'inside',
+        withoutEnlargement: true,
+      })
+      .jpeg({
+        quality: 85,
+        progressive: true,
+      })
+      .toBuffer();
+
+    // Generate unique filename
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    const fileName = req.file.fieldname + '-' + uniqueSuffix + '_optimized.jpg';
+
+    // Upload to S3
+    const uploadResult = await S3Service.uploadFile(
+      processedBuffer,
+      fileName,
+      'image/jpeg',
+      'images'
+    );
+
+    // Update req.file with S3 information
+    req.file.filename = fileName;
+    req.file.s3Key = uploadResult.key;
+    req.file.s3Url = uploadResult.url;
+    req.file.cloudfrontUrl = S3Service.getCloudFrontUrl(uploadResult.key);
+
+    console.log(`Image processed and uploaded to S3: ${uploadResult.url}`);
+
+    next();
+  } catch (error) {
+    console.error('Image processing/upload error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to process and upload image',
+      error: error.message,
+    });
+  }
+};
+
+// Legacy local storage middleware (for backward compatibility during migration)
+const processImageLocal = async (req, res, next) => {
   if (!req.file) {
     return next();
   }
@@ -64,19 +113,19 @@ const processImage = async (req, res, next) => {
     }
     return res.status(400).json({
       success: false,
-      message: "File validation failed",
+      message: 'File validation failed',
       errors: fileValidation.errors,
     });
   }
 
   try {
     const filePath = req.file.path;
-    const optimizedPath = filePath.replace(/\.[^/.]+$/, "_optimized.jpg");
+    const optimizedPath = filePath.replace(/\.[^/.]+$/, '_optimized.jpg');
 
     // Process image with Sharp
     await sharp(filePath)
       .resize(1200, 800, {
-        fit: "inside",
+        fit: 'inside',
         withoutEnlargement: true,
       })
       .jpeg({
@@ -92,37 +141,21 @@ const processImage = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error("Image processing error:", error);
+    console.error('Image processing error:', error);
     // If processing fails, continue with original file
     next();
   }
 };
 
-// Error handling middleware for upload errors
-const handleUploadError = (error, req, res, next) => {
-  if (error instanceof multer.MulterError) {
-    if (error.code === "LIMIT_FILE_SIZE") {
-      return res.status(400).json({
-        success: false,
-        message: "File too large. Maximum size is 5MB.",
-      });
-    }
-    if (error.code === "LIMIT_FILE_COUNT") {
-      return res.status(400).json({
-        success: false,
-        message: "Too many files. Only one file allowed.",
-      });
-    }
-  }
+// Choose middleware based on configuration
+const processImage =
+  config.AWS_ACCESS_KEY_ID && config.AWS_SECRET_ACCESS_KEY
+    ? processAndUploadImage
+    : processImageLocal;
 
-  if (error.message.includes("Only image files")) {
-    return res.status(400).json({
-      success: false,
-      message: error.message,
-    });
-  }
-
-  next(error);
+module.exports = {
+  upload,
+  processImage,
+  processAndUploadImage,
+  processImageLocal,
 };
-
-module.exports = { upload, processImage, handleUploadError };

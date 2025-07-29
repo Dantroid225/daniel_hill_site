@@ -119,9 +119,17 @@ export const portfolioApi = {
           created_at: string;
           updated_at: string;
         }) => {
-          const imageUrl = item.image_url
-            ? `${API_BASE_URL}${item.image_url}`
-            : '';
+          // Handle both local and S3/CloudFront URLs
+          let imageUrl = '';
+          if (item.image_url) {
+            if (item.image_url.startsWith('http')) {
+              // Already a complete URL (S3/CloudFront)
+              imageUrl = item.image_url;
+            } else {
+              // Local path, prepend API base URL
+              imageUrl = `${API_BASE_URL}${item.image_url}`;
+            }
+          }
           console.log('Generated image URL (all projects):', imageUrl);
           return {
             id: item.id,
@@ -177,9 +185,17 @@ export const portfolioApi = {
           created_at: string;
           updated_at: string;
         }) => {
-          const imageUrl = item.image_url
-            ? `${API_BASE_URL}${item.image_url}`
-            : '';
+          // Handle both local and S3/CloudFront URLs
+          let imageUrl = '';
+          if (item.image_url) {
+            if (item.image_url.startsWith('http')) {
+              // Already a complete URL (S3/CloudFront)
+              imageUrl = item.image_url;
+            } else {
+              // Local path, prepend API base URL
+              imageUrl = `${API_BASE_URL}${item.image_url}`;
+            }
+          }
           console.log('Generated image URL (featured projects):', imageUrl);
           return {
             id: item.id,
@@ -214,11 +230,24 @@ export const portfolioApi = {
       }
 
       const item = response.data.data;
+
+      // Handle both local and S3/CloudFront URLs
+      let imageUrl = '';
+      if (item.image_url) {
+        if (item.image_url.startsWith('http')) {
+          // Already a complete URL (S3/CloudFront)
+          imageUrl = item.image_url;
+        } else {
+          // Local path, prepend API base URL
+          imageUrl = `${API_BASE_URL}${item.image_url}`;
+        }
+      }
+
       return {
         id: item.id,
         title: item.title,
         description: item.description,
-        imageUrl: item.image_url ? `${API_BASE_URL}${item.image_url}` : '',
+        imageUrl: imageUrl,
         technologies: Array.isArray(item.technologies)
           ? item.technologies
           : JSON.parse(item.technologies || '[]'),

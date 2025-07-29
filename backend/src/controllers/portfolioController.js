@@ -5,36 +5,80 @@ const {
   sanitizeInput,
   validateFileUpload,
 } = require('../utils/validation');
+const S3Service = require('../utils/s3Service');
+const { getConfig } = require('../config/environment');
 const fs = require('fs');
 const path = require('path');
 
-// Utility function to archive an image file
-const archiveImage = imageUrl => {
+const config = getConfig();
+
+// Utility function to archive an image file (S3 or local)
+const archiveImage = async imageUrl => {
   if (!imageUrl || imageUrl === '/uploads/images/default.jpg') {
     return;
   }
 
-  const imagePath = path.join(__dirname, '../../', imageUrl);
-  if (!fs.existsSync(imagePath)) {
-    return;
-  }
-
   try {
-    // Create archived directory if it doesn't exist
-    const archivedDir = path.join(__dirname, '../../uploads/archived');
-    if (!fs.existsSync(archivedDir)) {
-      fs.mkdirSync(archivedDir, { recursive: true });
+    // Check if this is an S3 URL
+    if (
+      imageUrl.includes('s3.amazonaws.com') ||
+      imageUrl.includes('cloudfront.net')
+    ) {
+      // Extract S3 key from URL
+      const urlParts = imageUrl.split('/');
+      const key = urlParts.slice(3).join('/'); // Remove protocol, domain, and bucket
+
+      // Check if file exists in S3
+      const exists = await S3Service.fileExists(key);
+      if (!exists) {
+        console.log(`Image not found in S3: ${key}`);
+        return;
+      }
+
+      // Generate archived key
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const originalFilename = path.basename(key);
+      const archivedKey = `archived/${timestamp}-${originalFilename}`;
+
+      // Copy to archived location in S3
+      const AWS = require('aws-sdk');
+      const s3 = new AWS.S3();
+
+      await s3
+        .copyObject({
+          Bucket: config.S3_BUCKET_NAME,
+          CopySource: `${config.S3_BUCKET_NAME}/${key}`,
+          Key: archivedKey,
+        })
+        .promise();
+
+      // Delete original file
+      await S3Service.deleteFile(key);
+
+      console.log(`Image archived in S3: ${archivedKey}`);
+    } else {
+      // Handle local file archiving (legacy)
+      const imagePath = path.join(__dirname, '../../', imageUrl);
+      if (!fs.existsSync(imagePath)) {
+        return;
+      }
+
+      // Create archived directory if it doesn't exist
+      const archivedDir = path.join(__dirname, '../../uploads/archived');
+      if (!fs.existsSync(archivedDir)) {
+        fs.mkdirSync(archivedDir, { recursive: true });
+      }
+
+      // Generate archived filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const originalFilename = path.basename(imageUrl);
+      const archivedFilename = `archived-${timestamp}-${originalFilename}`;
+      const archivedPath = path.join(archivedDir, archivedFilename);
+
+      // Move file to archived folder
+      fs.renameSync(imagePath, archivedPath);
+      console.log(`Image moved to archived folder: ${archivedPath}`);
     }
-
-    // Generate archived filename with timestamp
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const originalFilename = path.basename(imageUrl);
-    const archivedFilename = `archived-${timestamp}-${originalFilename}`;
-    const archivedPath = path.join(archivedDir, archivedFilename);
-
-    // Move file to archived folder
-    fs.renameSync(imagePath, archivedPath);
-    console.log(`Image moved to archived folder: ${archivedPath}`);
   } catch (error) {
     console.error('Error archiving image:', error);
   }
@@ -47,12 +91,30 @@ const portfolioController = {
       const [rows] = await pool.execute(
         'SELECT * FROM portfolio_items WHERE status = "published" ORDER BY display_order ASC, created_at DESC'
       );
+
+      // Transform image URLs to use CloudFront if available
+      const transformedRows = rows.map(item => {
+        if (item.image_url) {
+          // If it's already a full URL, use it as is
+          if (item.image_url.startsWith('http')) {
+            return item;
+          }
+
+          // If it's a local path, convert to S3/CloudFront URL
+          if (item.image_url.startsWith('/uploads/')) {
+            const key = item.image_url.replace('/uploads/', '');
+            item.image_url = S3Service.getCloudFrontUrl(key);
+          }
+        }
+        return item;
+      });
+
       return sendResponse(
         res,
         200,
         true,
         'Portfolio items retrieved successfully',
-        rows
+        transformedRows
       );
     } catch (error) {
       console.error('Error fetching portfolio items:', error);
@@ -67,12 +129,29 @@ const portfolioController = {
         'SELECT * FROM portfolio_items ORDER BY display_order ASC, created_at DESC'
       );
 
+      // Transform image URLs to use CloudFront if available
+      const transformedItems = items.map(item => {
+        if (item.image_url) {
+          // If it's already a full URL, use it as is
+          if (item.image_url.startsWith('http')) {
+            return item;
+          }
+
+          // If it's a local path, convert to S3/CloudFront URL
+          if (item.image_url.startsWith('/uploads/')) {
+            const key = item.image_url.replace('/uploads/', '');
+            item.image_url = S3Service.getCloudFrontUrl(key);
+          }
+        }
+        return item;
+      });
+
       return sendResponse(
         res,
         200,
         true,
         'Portfolio items retrieved successfully',
-        items
+        transformedItems
       );
     } catch (error) {
       console.error('Error fetching portfolio items:', error);
@@ -93,12 +172,25 @@ const portfolioController = {
         return sendResponse(res, 404, false, 'Portfolio item not found');
       }
 
+      // Transform image URL to use CloudFront if available
+      const item = rows[0];
+      if (item.image_url) {
+        // If it's already a full URL, use it as is
+        if (item.image_url.startsWith('http')) {
+          // No transformation needed
+        } else if (item.image_url.startsWith('/uploads/')) {
+          // If it's a local path, convert to S3/CloudFront URL
+          const key = item.image_url.replace('/uploads/', '');
+          item.image_url = S3Service.getCloudFrontUrl(key);
+        }
+      }
+
       return sendResponse(
         res,
         200,
         true,
         'Portfolio item retrieved successfully',
-        rows[0]
+        item
       );
     } catch (error) {
       console.error('Error fetching portfolio item:', error);
@@ -144,7 +236,15 @@ const portfolioController = {
             errors: fileValidation.errors,
           });
         }
-        image_url = `/uploads/images/${req.file.filename}`;
+
+        // Use S3 URL if available, otherwise fall back to local path
+        if (req.file.cloudfrontUrl) {
+          image_url = req.file.cloudfrontUrl;
+        } else if (req.file.s3Url) {
+          image_url = req.file.s3Url;
+        } else {
+          image_url = `/uploads/images/${req.file.filename}`;
+        }
       }
 
       // Get next display order
@@ -245,8 +345,16 @@ const portfolioController = {
           });
         }
         // Archive old image if it exists
-        archiveImage(image_url);
-        image_url = `/uploads/images/${req.file.filename}`;
+        await archiveImage(image_url);
+
+        // Use S3 URL if available, otherwise fall back to local path
+        if (req.file.cloudfrontUrl) {
+          image_url = req.file.cloudfrontUrl;
+        } else if (req.file.s3Url) {
+          image_url = req.file.s3Url;
+        } else {
+          image_url = `/uploads/images/${req.file.filename}`;
+        }
       }
 
       const [result] = await pool.execute(
@@ -292,7 +400,7 @@ const portfolioController = {
       }
 
       // Archive image file if it exists
-      archiveImage(item[0].image_url);
+      await archiveImage(item[0].image_url);
 
       const [result] = await pool.execute(
         'DELETE FROM portfolio_items WHERE id = ?',
